@@ -19,10 +19,10 @@ git clone <this repository>
 - Put your consumerKey and consumerSecret in keys.clj. 
 
 ```clojure
-{:consumerKey "elzzup" :consumerSecret "akameco"}
+{:consumerKey "erzzup" :consumerSecret "akameco"}
 ```
 
-- Put twitter4j jar files in libs/ and run.
+- Put twitter4j-core-3.0.3-jar file in libs/ and run.
 
 ```
 lein run
