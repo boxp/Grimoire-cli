@@ -4,7 +4,6 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [seesaw "1.4.2"]]
-  :resource-paths ["libs/twitter4j-core-3.0.3.jar"]
+                 [org.twitter4j/twitter4j-core"[3.0,)"]]
   :main grimoire.core
   :aot [grimoire.core])
