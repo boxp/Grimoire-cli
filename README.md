@@ -22,8 +22,6 @@ git clone <this repository>
 {:consumerKey "erzzup" :consumerSecret "akameco"}
 ```
 
-- Put twitter4j-core-3.0.3-jar file in libs/ and run.
-
 ```
 lein run
 ```
