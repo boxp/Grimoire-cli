@@ -5,9 +5,13 @@
            (catch Exception e (println "Something has wrong."))))
 
 (defn showtl []
-  (let [status (.getHomeTimeline twitter)]
-  (do (println "Showing home timeline.")
-      (apply println (.getUser status) ":" (.getText status)))))
+  (let [statusAll (.getHomeTimeline twitter)]
+    (loop [status statusAll i 1]
+      (if (= i 20)
+        nil
+        (do
+          (println (.getScreenName (.getUser (first status))) ":" (.getText (first status)))
+          (recur (rest status) (+ i 1)))))))
 
 (defn reload []
   (load-file "src/grimoire/core_commands.clj"))
