@@ -10,19 +10,19 @@ A clojure platform for twitter.
 
 ## Usage
 
-1. Download this repository.
+- Download this repository.
 
 ```
 git clone <this repository> 
 ```
 
-2. Put your consumerKey and consumerSecret in keys.clj. 
+- Put your consumerKey and consumerSecret in keys.clj. 
 
 ```clojure
 {:consumerKey "elzzup" :consumerSecret "akameco"}
 ```
 
-3. Put twitter4j jar files in libs/ and run.
+- Put twitter4j jar files in libs/ and run.
 
 ```
 lein run
