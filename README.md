@@ -44,7 +44,7 @@ lein run
 
 ## Versions
 
-- v0.0.1 showtl function and post function.
+- v0.0.2 showtl function and post function.
 - v0.0.1 console and post function.
 
 ## License
