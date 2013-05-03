@@ -16,7 +16,7 @@
     (println "          |(ﾝ_l|,_,_ﾊ、")
     (println "          ｀~ し'.ﾌ~´")
 
-    (def consumers (load-file "keys.clj"))
+(def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
     (def consumerKey (:consumerKey consumers))
     (def consumerSecret (:consumerSecret consumers))
 
@@ -29,7 +29,7 @@
       (.setOAuthAccessToken (AccessToken. (:token tokens) (:tokenSecret tokens)))
     ))
 
-    (load-file "src/grimoire/core_commands.clj")
+    (load "grimoire/core_commands")
 
     (loop [input (read-line)]
       (if (= "exit" input)

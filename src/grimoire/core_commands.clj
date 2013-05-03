@@ -5,7 +5,7 @@
            (catch Exception e (println "Something has wrong."))))
 
 (defn showtl []
-  (let [statusAll (.getHomeTimeline twitter)]
+  (let [statusAll (reverse (.getHomeTimeline twitter))]
     (loop [status statusAll i 1]
       (if (= i 20)
         nil
