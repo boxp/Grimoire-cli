@@ -30,7 +30,7 @@ lein run
 
 ## Versions
 
-- v1.0.1 console and post function.
+- v0.0.1 console and post function.
 
 ## License
 
