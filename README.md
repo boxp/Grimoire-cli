@@ -9,15 +9,18 @@ A clojure platform for twitter.
 
 ## Usage
 
-  '''git clone <this repository>'''
+  ``` git clone <this repository>
+  ```
 
 You should put your consumerKey and consumerSecret in keys.clj.
 
-  '''{:consumerKey "elzzup" :consumerSecret "akameco"}
+  ``` {:consumerKey "elzzup" :consumerSecret "akameco"}
+  ```
 
 You should put twitter4j jar files in libs/.
 
-  lein run'''
+  ``` lein run
+  ```
 
 ## Versions
 
