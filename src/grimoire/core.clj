@@ -1,13 +1,13 @@
 (ns grimoire.core
-  (:gen-class)
   (:require [grimoire.oauth :as oauth])
   (:import (twitter4j TwitterFactory)
-           (twitter4j.auth AccessToken)))
+           (twitter4j.auth AccessToken))
+  (:gen-class))
 
 (defn -main []
   (do
 
-    (println "Grimoire has started v0.0.1")
+    (println "Grimoire has started v0.0.2")
     (println "          _ ........_")
     (println "          , ´,.-==-.ヽ")
     (println "            ((ﾉﾉ))ﾉ）)")
