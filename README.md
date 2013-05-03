@@ -6,20 +6,23 @@ A clojure platform for twitter.
 
 - leingen
 - java
+- twitter4j
 
 ## Usage
+
+- Download this repository.
 
 ```
 git clone <this repository> 
 ```
 
-You should put your consumerKey and consumerSecret in keys.clj.
+- Put your consumerKey and consumerSecret in keys.clj. 
 
 ```clojure
 {:consumerKey "elzzup" :consumerSecret "akameco"}
 ```
 
-You should put twitter4j jar files in libs/.
+- Put twitter4j jar files in libs/ and run.
 
 ```
 lein run
@@ -27,10 +30,10 @@ lein run
 
 ## Versions
 
-- v1.0.1 console and post function.
+- v0.0.1 console and post function.
 
 ## License
 
-Copyright è¢Ì 2013 BOXP
+Copyright ¬© 2013 BOXP
 
 Distributed under the Eclipse Public License, the same as Clojure.
