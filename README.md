@@ -22,22 +22,23 @@ git clone <this repository>
 lein run
 ```
 
-- Post Tweet
-
-``` clojure
-(post "hoge")
-```
-
-- Show HomeTimeline
+- Print available commands.
 
 ```clojure
-(showtl)
+(help)
+```
+
+- Read documents.
+
+```clojure
+(doc hoge)
 ```
 
 - And enjoy your twitter4j hacking.
 
 ## Versions
 
+- v0.0.3 
 - v0.0.2 showtl function and post function.
 - v0.0.1 console and post function.
 
