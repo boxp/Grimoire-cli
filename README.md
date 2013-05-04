@@ -22,22 +22,6 @@ git clone <this repository>
 lein run
 ```
 
-<<<<<<< HEAD
-=======
-- Post Tweet
-
-``` clojure
-(post "hoge")
->>>>>>> origin/master
-```
-
-- Show HomeTimeline
-
-```clojure
-(showtl)
-```
-
-<<<<<<< HEAD
 - Post Tweet
 
 ``` clojure
@@ -50,8 +34,6 @@ lein run
 (showtl)
 ```
 
-=======
->>>>>>> origin/master
 - And enjoy your twitter4j hacking.
 
 ## Versions
