@@ -7,7 +7,7 @@
            (twitter4j.conf ConfigurationContext)
            (twitter4j.auth OAuthAuthorization)))
 
-(def consumers (load-file "keys.clj"))
+(def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
 (def consumerKey (:consumerKey consumers))
 (def consumerSecret (:consumerSecret consumers))
 

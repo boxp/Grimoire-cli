@@ -16,16 +16,28 @@ A clojure platform for twitter.
 git clone <this repository> 
 ```
 
-- Put your consumerKey and consumerSecret in keys.clj. 
-
-```clojure
-{:consumerKey "erzzup" :consumerSecret "akameco"}
-```
+- Start grimoire
 
 ```
 lein run
 ```
 
+<<<<<<< HEAD
+=======
+- Post Tweet
+
+``` clojure
+(post "hoge")
+>>>>>>> origin/master
+```
+
+- Show HomeTimeline
+
+```clojure
+(showtl)
+```
+
+<<<<<<< HEAD
 - Post Tweet
 
 ``` clojure
@@ -38,6 +50,8 @@ lein run
 (showtl)
 ```
 
+=======
+>>>>>>> origin/master
 - And enjoy your twitter4j hacking.
 
 ## Versions
