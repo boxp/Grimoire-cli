@@ -16,7 +16,7 @@
     (println "          |(ﾝ_l|,_,_ﾊ、")
     (println "          ｀~ し'.ﾌ~´")
 
-(def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
+    (def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
     (def consumerKey (:consumerKey consumers))
     (def consumerSecret (:consumerSecret consumers))
 
@@ -29,21 +29,21 @@
       (.setOAuthAccessToken (AccessToken. (:token tokens) (:tokenSecret tokens)))
     ))
 
-  (defn post [input]
-    (try (str "Success:" (.getText (.updateStatus twitter input)))
-             (catch Exception e (println "Something has wrong."))))
+    (defn post [input]
+      (try (str "Success:" (.getText (.updateStatus twitter input)))
+               (catch Exception e (println "Something has wrong."))))
 
-  (defn showtl []
-    (let [statusAll (reverse (.getHomeTimeline twitter))]
-      (loop [status statusAll i 1]
-        (if (= i 20)
-          nil
-          (do
-            (println (.getScreenName (.getUser (first status))) ":" (.getText (first status)))
-            (recur (rest status) (+ i 1)))))))
+    (defn showtl []
+      (let [statusAll (reverse (.getHomeTimeline twitter))]
+        (loop [status statusAll i 1]
+          (if (= i 20)
+            nil
+            (do
+              (println (.getScreenName (.getUser (first status))) ":" (.getText (first status)))
+              (recur (rest status) (+ i 1)))))))
 
-  (defn reload []
-    (load-file "src/grimoire/core_commands.clj"))
+    (defn reload []
+      (load-file "src/grimoire/core_commands.clj"))
 
     (loop [input (read-line)]
       (if (= "exit" input)
