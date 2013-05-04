@@ -13,11 +13,21 @@
 
 (defn get-tokens [] 
   (let [conf (ConfigurationContext/getInstance) 
-        auth (doto (OAuthAuthorization. conf) 
+        auth (doto 
+                (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
-         (do  (print "Please access URL and get PINCode:")
-              (try (println (.getAuthorizationURL (. auth getOAuthRequestToken)) "\nInput PIN:")
-                   (catch TwitterException e 
-                      (println (. e toString))))
-              (def tokens (.getOAuthAccessToken auth (read-line)))
-              (spit "tokens.clj" (str "{:token " \" (.getToken tokens) \" " :tokenSecret " \" (.getTokenSecret tokens) \" "}")))))
+         (do  
+           (print "Please access URL and get PINCode:")
+           (try 
+             (println 
+               (.getAuthorizationURL (. auth getOAuthRequestToken)) 
+               "\nInput PIN:")
+             (catch TwitterException e 
+               (println (. e toString))))
+         (let [twitterTokens (.getOAuthAccessToken auth (read-line))]
+         (spit "tokens.clj" (str "{:token " \" (.getToken twitterTokens) \" " :tokenSecret " \" (.getTokenSecret twitterTokens) \" "}"))))))
+
+(try (def tokens 
+       (load-file "tokens.clj"))
+     (catch Exception e
+       (get-tokens)))
