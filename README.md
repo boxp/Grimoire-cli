@@ -22,14 +22,27 @@ git clone <this repository>
 {:consumerKey "erzzup" :consumerSecret "akameco"}
 ```
 
-- Put twitter4j-core-3.0.3-jar file in libs/ and run.
-
 ```
 lein run
 ```
 
+- Post Tweet
+
+``` clojure
+(post "hoge")
+```
+
+- Show HomeTimeline
+
+```clojure
+(showtl)
+```
+
+- And enjoy your twitter4j hacking.
+
 ## Versions
 
+- v0.0.2 showtl function and post function.
 - v0.0.1 console and post function.
 
 ## License

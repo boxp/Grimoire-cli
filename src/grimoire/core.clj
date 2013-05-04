@@ -29,7 +29,7 @@
       (.setOAuthAccessToken (AccessToken. (:token tokens) (:tokenSecret tokens)))
     ))
 
-    (load-file "src/grimoire/core_commands.clj")
+    (load "core_commands")
 
     (loop [input (read-line)]
       (if (= "exit" input)
