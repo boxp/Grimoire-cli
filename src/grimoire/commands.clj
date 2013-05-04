@@ -13,6 +13,7 @@
         (:tokenSecret tokens)))))
   (catch Exception e (println e)))
 
+
 (defn post 
   " Post tweets \nUsage: (post \"hoge\")"
   [input & more]
