@@ -38,7 +38,7 @@ lein run
 
 ## Versions
 
-- v0.0.3 
+- v0.0.3 clojure.repl symbols and help commands support.
 - v0.0.2 showtl function and post function.
 - v0.0.1 console and post function.
 
