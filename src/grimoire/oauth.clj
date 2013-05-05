@@ -5,7 +5,8 @@
            (twitter4j TwitterException)
            (twitter4j.auth AccessToken)
            (twitter4j.conf ConfigurationContext)
-           (twitter4j.auth OAuthAuthorization)))
+           (twitter4j.auth OAuthAuthorization)
+           (java.io File)))
 
 (def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
 (def consumerKey (:consumerKey consumers))
@@ -20,14 +21,29 @@
            (print "Please access URL and get PINCode:")
            (try 
              (println 
-               (.getAuthorizationURL (. auth getOAuthRequestToken)) 
+               (.getAuthorizationURL 
+               (. auth getOAuthRequestToken)) 
                "\nInput PIN:")
              (catch TwitterException e 
-               (println (. e toString))))
-         (let [twitterTokens (.getOAuthAccessToken auth (read-line))]
-         (spit "tokens.clj" (str "{:token " \" (.getToken twitterTokens) \" " :tokenSecret " \" (.getTokenSecret twitterTokens) \" "}"))))))
+               (println 
+                (. e toString))))
+           (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
+           (let 
+            [twitterTokens 
+              (.getOAuthAccessToken auth (read-line))]
+             (do
+               (def tokens 
+                 {:token (.getToken twitterTokens) 
+                  :tokenSecret (.getTokenSecret twitterTokens)})
+               (spit 
+                 (str 
+                   (System/getenv "HOME") 
+                   "/.grimoire/tokens.clj") 
+                 (str {:token (.getToken twitterTokens) 
+                  :tokenSecret (.getTokenSecret twitterTokens)})))))))
 
-(try (def tokens 
-       (load-file "tokens.clj"))
-     (catch Exception e
-       (get-tokens)))
+(try 
+  (def tokens 
+    (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj")))
+  (catch Exception e
+    (get-tokens)))
