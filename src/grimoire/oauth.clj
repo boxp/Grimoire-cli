@@ -39,8 +39,7 @@
                  (str 
                    (System/getenv "HOME") 
                    "/.grimoire/tokens.clj") 
-                 (str {:token (.getToken twitterTokens) 
-                  :tokenSecret (.getTokenSecret twitterTokens)})))))))
+                 (str tokens)))))))
 
 (try 
   (def tokens 
