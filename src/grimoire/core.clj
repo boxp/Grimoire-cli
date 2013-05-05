@@ -3,6 +3,7 @@
         [grimoire.oauth :as oauth]
         [grimoire.commands]
         [grimoire.services :as services]
+        [grimoire.listener :as listener]
   (:gen-class)))
 
 (defn -main []
@@ -22,7 +23,7 @@
           (do 
             (try (println "bye bye!")
               (catch Exception e (println e)))
-            (.stop twitterstream))
+            (.shutdown twitterstream))
           (do (print "Grimoire => ")
               (try (println (load-string (str "(in-ns `grimoire.core) " input)))
                    (catch Exception e (println e)))
