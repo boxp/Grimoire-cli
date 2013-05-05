@@ -1,4 +1,4 @@
-(defproject grimoire "0.0.2-SNAPSHOT"
+(defproject grimoire "0.0.5-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
