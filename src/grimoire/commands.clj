@@ -42,6 +42,8 @@
            "*** Grimoire-cli Commands List***\n"
            "post: Post tweets\n"
            "showtl: Showing 20 new Tweets from HomeTimeline.\n"
+           "start: start userstream.\n"
+           "stop: stop userstream.\n"
            "Get more information to (doc <commands>)."))
 
 (defn start []

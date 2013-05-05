@@ -38,6 +38,8 @@ lein run
 
 ## Versions
 
+- v0.0.4 
+  - userstream service support (start) (stop)
 - v0.0.3 
   - clojure.repl symbols support
   - help commands support

@@ -1,6 +1,9 @@
 (ns grimoire.listener
   (:import (twitter4j UserStreamListener)))
 
+(def tweets #{})
+(def friends #{})
+
 (def listener 
   (proxy [UserStreamListener] []
     (onStatus [status]
@@ -11,7 +14,7 @@
             {:user (.. status getUser getScreenName)
              :text (.. status getText)
              :time (.. status getCreatedAt)
-             :source (.. status getSouce)
+             :source (.. status getSource)
              :inreply (.. status getInReplyToStatusId)
              :retweeted (.. status getRetweetCount)
              :favorited? (.. status isFavorited)}))
@@ -168,7 +171,7 @@
 
     (onException [ex]
       (do
-        (.printstacktrace ex)
+        (.printStackTrace ex)
         (println 
           "onException:"
           (.getMessage ex))))))

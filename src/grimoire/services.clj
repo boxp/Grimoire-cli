@@ -4,8 +4,7 @@
   (:import 
     (twitter4j TwitterStreamFactory)
     (twitter4j.conf ConfigurationContext)
-    (twitter4j.conf ConfigurationBuilder)
-    MyListner))
+    (twitter4j.conf ConfigurationBuilder)))
 
 (def twitterstream 
   (let [confbuilder (doto (ConfigurationBuilder.)
