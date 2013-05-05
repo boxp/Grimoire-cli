@@ -16,5 +16,4 @@
     (doto 
       (.getInstance 
         (TwitterStreamFactory. conf))
-      (.addListener listener)
-      (.user))))
+      (.addListener listener))))
