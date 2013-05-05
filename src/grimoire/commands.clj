@@ -1,6 +1,7 @@
 (ns grimoire.commands
   (:use [clojure.repl :as repl]
-        [grimoire.oauth :as oauth])
+        [grimoire.oauth :as oauth]
+        [grimoire.services])
   (:import (twitter4j TwitterFactory)
            (twitter4j.auth AccessToken)))
 
@@ -23,7 +24,7 @@
         (.updateStatus twitter 
           (str input
                (apply str more)))))
-    (catch Exception e (println "Something has wrong."))))
+    (catch Exception e (println "Something has wrong." e))))
 
 (defn showtl 
   " Showing 20 new tweets from HomeTimeline.\nUsage: (showtl)"
@@ -42,6 +43,12 @@
            "post: Post tweets\n"
            "showtl: Showing 20 new Tweets from HomeTimeline.\n"
            "Get more information to (doc <commands>)."))
+
+(defn start []
+  (.user twitterstream))
+
+(defn stop []
+  (.shutdown twitterstream))
 
 ; デバック用
 (defn reload []
