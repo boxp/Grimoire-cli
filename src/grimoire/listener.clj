@@ -1,7 +1,7 @@
 (ns grimoire.listener
   (:import (twitter4j UserStreamListener)))
 
-(def tweets #{})
+(def tweets [])
 (def friends #{})
 
 (def listener 
@@ -10,19 +10,22 @@
       (do
         (def tweets 
           (conj tweets 
-            (.getId status) 
             {:user (.. status getUser getScreenName)
              :text (.. status getText)
              :time (.. status getCreatedAt)
              :source (.. status getSource)
              :inreply (.. status getInReplyToStatusId)
              :retweeted (.. status getRetweetCount)
-             :favorited? (.. status isFavorited)}))
+             :favorited? (.. status isFavorited)
+             :id (.. status getId)
+             :count (- (count tweets) 1)}))
         (println 
-          "onStatus @" 
-          (.. status getUser getScreenName) 
-          "-" 
-          (.. status getText))))
+          (str
+            (- (count tweets) 1)
+            " @"
+            (.. status getUser getScreenName) 
+            " - " 
+            (.. status getText)))))
 
     (onDeletionNotice [statusDeletionNotice]
       (do

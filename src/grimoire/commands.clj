@@ -1,9 +1,11 @@
 (ns grimoire.commands
   (:use [clojure.repl :as repl]
         [grimoire.oauth :as oauth]
-        [grimoire.services])
+        [grimoire.services]
+        [grimoire.listener])
   (:import (twitter4j TwitterFactory)
-           (twitter4j.auth AccessToken)))
+           (twitter4j.auth AccessToken)
+           (twitter4j StatusUpdate)))
 
 (try 
   (def twitter (doto (.getInstance (TwitterFactory.))
@@ -44,13 +46,66 @@
            "showtl: Showing 20 new Tweets from HomeTimeline.\n"
            "start: start userstream.\n"
            "stop: stop userstream.\n"
+           "fav: Favorite status.\n"
+           "retweet: Retweet status.\n"
+           "favret: Retweet and Favorite status.\n"
+           "reply: reply to tweet"
            "Get more information to (doc <commands>)."))
 
 (defn start []
+  "start userstream"
   (.user twitterstream))
 
 (defn stop []
+  "stop userstream"
   (.shutdown twitterstream))
+
+(defn retweet 
+  "Retweet Timeline's status number."
+  [statusnum]
+  (try 
+    (let [status (.retweetStatus twitter (:id (tweets statusnum)))]
+      (str 
+        "Success retweet: @" 
+        (.. status getUser getScreenName)
+        " - "
+        (.. status getText)))
+    (catch Exception e "something has wrong.")
+    ))
+
+(defn fav
+  "Favorite Timeline's status number."
+  [statusnum]
+  (try
+    (let [status (.createFavorite twitter (:id (tweets statusnum)))]
+      (str
+        "Success Fav: @" 
+        (.. status getUser getScreenName)
+        " - "
+        (.. status getText)))
+    (catch Exception e "something has wrong.")))
+
+(defn favret [statusnum]
+  "Favorite and Retweet Timeline's status number"
+  (do 
+    (fav statusnum)
+    (retweet statusnum)))
+
+(defn reply [statusnum & texts]
+  "Reply to tweets"
+    (.updateStatus 
+      twitter 
+      (doto
+        (StatusUpdate. 
+          (str
+            \@
+            (:user
+              (tweets statusnum))
+            " "
+            (apply str texts)))
+        (.setInReplyToStatusId
+          (:id 
+            (tweets statusnum))))))
 
 ; デバック用
 (defn reload []
