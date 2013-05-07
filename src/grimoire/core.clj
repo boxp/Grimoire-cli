@@ -9,21 +9,22 @@
 (defn -main []
   (do
 
-    (println "Grimoire has started v0.0.5")
-    (println "          _ ........_")
-    (println "          , ´,.-==-.ヽ")
-    (println "            ((ﾉﾉ))ﾉ）)")
-    (println "          ハ) ﾟ ヮﾟﾉ)       Welcome!")
-    (println "          ~,く__,ネﾉ)つ")
-    (println "          |(ﾝ_l|,_,_ﾊ、")
-    (println "          ｀~ し'.ﾌ~´")
-    (println "                          ")
-    (println "---------------------------")
-    (println "* Usage : (commands)      *")
-    (println "* Help  : (help)          *")
-    (println "* Exit  :  exit            *")
-    (println "* Stream: (start)         *")
-    (println "---------------------------")
+    (println "Grimoire has started v0.0.5\n"
+             "          _ ........_\n"
+             "          , ´,.-==-.ヽ\n"
+             "            ((ﾉﾉ))ﾉ）)\n"
+             "          ハ) ﾟ ヮﾟﾉ)       Welcome!\n"
+             "          ~,く__,ネﾉ)つ\n"
+             "          |(ﾝ_l|,_,_ﾊ、\n"
+             "          ｀~ し'.ﾌ~´\n"
+             "                          \n"
+             "---------------------------\n"
+             "* Usage : (commands)      *\n"
+             "---------------------------\n"
+             "* Help  : (help)          *\n"
+             "* Exit  :  exit           *\n"
+             "* Stream: (start)         *\n"
+             "---------------------------\n")
 
     (loop [input (read-line)]
       (cond 
