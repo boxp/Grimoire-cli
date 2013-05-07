@@ -19,7 +19,7 @@
                 (.setOAuthConsumer consumerKey,consumerSecret))]
          (do  
            (try 
-             (print
+             (println
                "Please access URL and get PIN:"
                (.getAuthorizationURL 
                (. auth getOAuthRequestToken)) 

@@ -1,6 +1,6 @@
 (ns grimoire.services
   (:use [grimoire.oauth :as oauth]
-        [grimoire.listener])
+        [grimoire.listener :as listener])
   (:import 
     (twitter4j TwitterStreamFactory)
     (twitter4j.conf ConfigurationContext)
