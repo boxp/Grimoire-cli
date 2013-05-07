@@ -18,9 +18,9 @@
                 (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
          (do  
-           (print "Please access URL and get PINCode:")
            (try 
-             (println 
+             (print
+               "Please access URL and get PIN:"
                (.getAuthorizationURL 
                (. auth getOAuthRequestToken)) 
                "\nInput PIN:")
