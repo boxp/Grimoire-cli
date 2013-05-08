@@ -1,4 +1,5 @@
 (ns grimoire.oauth
+  (:use [clojure.java.browse])
   (:import (twitter4j Status)
            (twitter4j Twitter)
            (twitter4j TwitterFactory)
@@ -19,15 +20,18 @@
                 (.setOAuthConsumer consumerKey,consumerSecret))]
          (do  
            (try 
-             (println
-               "Please access URL and get PIN:"
-               (.getAuthorizationURL 
-               (. auth getOAuthRequestToken)) 
-               "\nInput PIN:")
-             (catch TwitterException e 
-               (println 
-                (. e toString))))
-           (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
+             (do
+               (browse-url (.getAuthorizationURL 
+                 (. auth getOAuthRequestToken)))
+               (println
+                 "Please access URL and get PIN:"
+                 (.getAuthorizationURL 
+                 (. auth getOAuthRequestToken)) 
+                 "\nInput PIN:"))
+               (catch TwitterException e 
+                 (println 
+                  (. e toString))))
+             (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
            (let 
             [twitterTokens 
               (.getOAuthAccessToken auth (read-line))]

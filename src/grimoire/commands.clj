@@ -19,13 +19,15 @@
 
 (defn post 
   " Post tweets \nUsage: (post \"hoge\")"
-  [input & more]
+  [& input]
   (try 
     (str "Success:" 
       (.getText 
         (.updateStatus twitter 
-          (str input
-               (apply str more)))))
+          (if 
+            (> (count (seq (apply str input))) 140)
+              (str (apply str (take 137 (seq (apply str input)))) "...")
+              (apply str input)))))
     (catch Exception e (println "Something has wrong." e))))
 
 (defn showtl 

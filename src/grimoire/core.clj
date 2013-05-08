@@ -4,6 +4,7 @@
         [grimoire.commands]
         [grimoire.services :as services]
         [grimoire.listener :as listener]
+        [grimoire.settings]
   (:gen-class)))
 
 (defn -main []
@@ -26,6 +27,8 @@
              "* Stream: (start)         *\n"
              "---------------------------\n")
 
+    (print "Grimoire => ")
+    (flush)
     (loop [input (read-line)]
       (cond 
         (= "exit" input)
@@ -35,7 +38,11 @@
             (.shutdown twitterstream))
         :else  
           (do 
-            (print "Grimoire => ")
             (try (println (load-string (str "(in-ns `grimoire.core) " input)))
-                 (catch Exception e (println e)))
+                 (catch Exception e 
+                   (do 
+                     (println e)
+                     (post (str (.getScreenName twitter) "がevalに失敗しました:" input " #Grimoire" " Exception:" e)))))
+            (print "Grimoire => ")
+            (flush)
             (recur (read-line)))))))
