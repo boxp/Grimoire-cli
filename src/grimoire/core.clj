@@ -4,8 +4,8 @@
         [grimoire.commands]
         [grimoire.services :as services]
         [grimoire.listener :as listener]
-        [grimoire.settings]
-  (:gen-class)))
+        [grimoire.settings])
+  (:gen-class))
 
 (defn -main []
   (do
