@@ -22,13 +22,11 @@
            (try 
              (do
                (try 
-                 (browse-url (.getAuthorizationURL 
-                   (. auth getOAuthRequestToken)))
+                 (browse-url (def oauthurl (.. auth getOAuthRequestToken getAuthorizationURL)))
                  (catch Exception e nil))
                (println
                  "Please access URL and get PIN:"
-                 (.getAuthorizationURL 
-                   (. auth getOAuthRequestToken)) 
+                  oauthurl) 
                  "\nInput PIN:"))
                (catch TwitterException e 
                  (println 
