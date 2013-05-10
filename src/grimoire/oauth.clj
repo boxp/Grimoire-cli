@@ -27,7 +27,7 @@
                (println
                  "Please access URL and get PIN:"
                   oauthurl) 
-                 "\nInput PIN:"))
+                 "\nInput PIN:")
                (catch TwitterException e 
                  (println 
                   "Getting OAuth URL failed.")))
