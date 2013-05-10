@@ -28,7 +28,7 @@
                (println
                  "Please access URL and get PIN:"
                  (.getAuthorizationURL 
-                 (. auth getOAuthRequestToken)) 
+                   (. auth getOAuthRequestToken)) 
                  "\nInput PIN:"))
                (catch TwitterException e 
                  (println 
