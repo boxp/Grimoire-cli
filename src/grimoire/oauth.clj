@@ -21,8 +21,10 @@
          (do  
            (try 
              (do
-               (browse-url (.getAuthorizationURL 
-                 (. auth getOAuthRequestToken)))
+               (try 
+                 (browse-url (.getAuthorizationURL 
+                   (. auth getOAuthRequestToken)))
+                 (catch Exception e nil))
                (println
                  "Please access URL and get PIN:"
                  (.getAuthorizationURL 
