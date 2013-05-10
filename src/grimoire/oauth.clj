@@ -32,7 +32,7 @@
                  "\nInput PIN:"))
                (catch TwitterException e 
                  (println 
-                  (. e toString))))
+                  "Getting OAuth URL failed.")))
              (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
            (let 
             [twitterTokens 
