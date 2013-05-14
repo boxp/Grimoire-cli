@@ -39,21 +39,21 @@
 
     (onDeletionNotice [statusDeletionNotice]
       (do
-        (print
+        (print 
           "Got a status deletion notice id:" 
           (.. statusDeletionNotice getStatusId)
           "\n")))
 
     (onTrackLimitationNotice [numberOfLimitedStatuses]
       (do
-        (print
+        (print 
           "Got a track limitation notice:" 
           numberOfLimitedStatuses
           "\n")))
 
     (onScrubGeo [userId upToStatusId]
       (do
-        (print
+        (print 
           "Got scrub_geo event userId:" 
           userId 
           "upToStatusId:" 
@@ -62,7 +62,7 @@
 
     (onStallWarning [warning]
       (do
-        (print
+        (print 
           "Got stall warning:" 
           warning
           "\n")))
@@ -74,7 +74,7 @@
 
     (onFavorite [source target favoritedStatus]
       (do
-        (print
+        (print 
           "You Gotta Fav! source:@" 
           (.getScreenName source) 
           " target:@" 
@@ -87,7 +87,7 @@
 
     (onUnfavorite [source target unfavoritedStatus]
       (do
-        (print
+        (print 
           "Catched unFav! source:@" 
           (.getScreenName source) 
           " target:@" 
@@ -100,7 +100,7 @@
 
     (onFollow [source followedUser]
       (do
-        (print
+        (print 
           "onFollow source:@" 
           (.getScreenName source) 
           " target:@" 
@@ -108,13 +108,13 @@
           "\n")))
 
     (onDirectMessage [directMessage]
-      (print
+      (print 
         "onDirectMessage text:" 
         (.getText directMessage)
         "\n"))
 
     (onUserListMemberAddition [addedMember listOwner alist]
-      (print
+      (print 
         (.getScreenName addedMember) 
         "listOwner:@" 
         (.getScreenName listOwner) 
@@ -123,7 +123,7 @@
         "\n"))
       
     (onUserListMemberDeletion [deletedMember listOwner alist]
-      (print
+      (print 
         (.getScreenName deletedMember) 
         "listOwner:@" 
         (.getScreenName listOwner) 
@@ -132,7 +132,7 @@
         "\n"))
 
     (onUserListSubscription [subscriber listOwner alist]
-      (print
+      (print 
         "onUserListSubscribed subscriber:@" 
         (.getScreenName subscriber) 
         " listOwner:@"
@@ -142,7 +142,7 @@
         "\n"))
 
     (onUserListUnsubscription [subscriber listOwner alist]
-      (print
+      (print 
         "onUserListUnSubscribed subscriber:@" 
         (.getScreenName subscriber) 
         " listOwner:@"
@@ -177,14 +177,14 @@
 
     (onUserProfileUpdate [updatedUser]
       (do
-        (print
+        (print 
           "onUserProfileUpdated user:@"
           (.getScreenName updatedUser)
           "\n")))
 
     (onBlock [source blockedUser]
       (do
-        (print
+        (print 
           "onBlock user:@"
           (.getScreenName source)
           " target:@"
@@ -193,7 +193,7 @@
 
     (onUnBlock [source unblockedUser]
       (do
-        (print
+        (print 
           "onUnBlock user:@"
           (.getScreenName source)
           " target:@"
@@ -203,7 +203,7 @@
     (onException [ex]
       (do
         (.printStackTrace ex)
-        (print
+        (print 
           "onException:"
           (.getMessage ex)
           "\n")))))
