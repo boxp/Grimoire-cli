@@ -95,19 +95,24 @@
 
 (defn reply [statusnum & texts]
   "Reply to tweets"
-    (.updateStatus 
-      twitter 
-      (doto
-        (StatusUpdate. 
-          (str
-            \@
-            (:user
-              (tweets statusnum))
-            " "
-            (apply str texts)))
-        (.setInReplyToStatusId
-          (:id 
-            (tweets statusnum))))))
+  (str "Success:" 
+    (.getText
+      (.updateStatus 
+        twitter 
+        (doto
+          (StatusUpdate. 
+            (str
+              \@
+              (:user
+                (tweets statusnum))
+              " "
+              (if 
+                (> (count (seq (apply str texts))) 140)
+                  (str (apply str (take 137 (seq (apply str texts)))) "...")
+                  (apply str texts)))))
+          (.setInReplyToStatusId
+            (:id 
+              (tweets statusnum)))))))
 
 ; デバック用
 (defn reload []

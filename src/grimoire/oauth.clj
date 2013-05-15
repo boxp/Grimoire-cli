@@ -21,16 +21,16 @@
          (do  
            (try 
              (do
-               (browse-url (.getAuthorizationURL 
-                 (. auth getOAuthRequestToken)))
+               (try 
+                 (browse-url (def oauthurl (.. auth getOAuthRequestToken getAuthorizationURL)))
+                 (catch Exception e nil))
                (println
                  "Please access URL and get PIN:"
-                 (.getAuthorizationURL 
-                 (. auth getOAuthRequestToken)) 
-                 "\nInput PIN:"))
+                  oauthurl) 
+                 "\nInput PIN:")
                (catch TwitterException e 
                  (println 
-                  (. e toString))))
+                  "Getting OAuth URL failed.")))
              (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
            (let 
             [twitterTokens 
