@@ -18,3 +18,12 @@
 (def twitterstream 
     (doto (.getInstance (TwitterStreamFactory. conf))
       (.addListener listener)))
+
+(defn start []
+  "start userstream"
+  (.user twitterstream))
+
+(defn stop []
+  "stop userstream"
+  (.shutdown twitterstream))
+

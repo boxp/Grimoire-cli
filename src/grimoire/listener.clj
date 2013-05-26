@@ -1,9 +1,9 @@
 (ns grimoire.listener
-  (:import (twitter4j UserStreamListener)))
-
-(def tweets [])
-(def friends #{})
-(def mentions [])
+  (:import (twitter4j UserStreamListener))
+  (:use [lanterna.terminal :as t]
+        [grimoire.oauth]
+        [grimoire.lanterna]
+        [grimoire.datas]))
 
 (def listener 
   (proxy [UserStreamListener] []
@@ -16,21 +16,26 @@
                        :retweeted (.. status getRetweetCount)
                        :favorited? (.. status isFavorited)
                        :id (.. status getId)
-                       :count (count tweets)}]
+                       :count (count @tweets)}]
         (do
           (if 
-            (some #(= (.. status getId) %) friends)
-            (def mentions
-              (conj 
-                mentions
-                newstatus)))
-          (def tweets 
-            (conj 
-              tweets 
-              newstatus))
+            (some #(= (.. status getId) %) @friends)
+            (dosync
+              (alter mentions conj newstatus)))
+          (dosync
+            (alter tweets conj newstatus))
+          (t/put-string 
+            griterm
+            (str
+              (- (count @tweets) 1)
+              " @"
+              (.. status getUser getScreenName) 
+              " - " 
+              (.. status getText)
+              "\n"))
           (print 
             (str
-              (- (count tweets) 1)
+              (- (count @tweets) 1)
               " @"
               (.. status getUser getScreenName) 
               " - " 
@@ -69,8 +74,8 @@
 
     (onFriendList [friendIds]
       (do
-        (def friends 
-          (conj friends friendIds))))
+        (dosync
+          (alter friends conj friendIds))))
 
     (onFavorite [source target favoritedStatus]
       (do
@@ -105,7 +110,10 @@
           (.getScreenName source) 
           " target:@" 
           (.getScreenName followedUser)
-          "\n")))
+          "\n")
+        (if 
+          (= (.getScreenName followedUser) "alicepmaster")
+          (.createFriendship twitter (.getId source)))))
 
     (onDirectMessage [directMessage]
       (print 

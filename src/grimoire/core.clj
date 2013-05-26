@@ -1,8 +1,10 @@
 (ns grimoire.core
+  (:require [lanterna.terminal :as t])
   (:use [clojure.repl]
+        [grimoire.lanterna]
         [grimoire.oauth :as oauth]
         [grimoire.commands]
-        [grimoire.services :as services]
+        [grimoire.services]
         [grimoire.listener :as listener]
         [grimoire.settings])
   (:gen-class))
@@ -14,7 +16,9 @@
              "          _ ........_\n"
              "          , ´,.-==-.ヽ\n"
              "            ((ﾉﾉ))ﾉ）)\n"
-             (str "          ハ) ﾟ ヮﾟﾉ)       Welcome " (.getScreenName twitter) "!\n")
+             (try
+               (str "          ハ) ﾟ ヮﾟﾉ)       Welcome " (.getScreenName twitter) "!\n")
+               (catch Exception e nil))
              "          ~,く__,ネﾉ)つ\n"
              "          |(ﾝ_l|,_,_ﾊ、\n"
              "          ｀~ し'.ﾌ~´\n"
@@ -35,14 +39,14 @@
           (do 
             (try (println "bye bye!")
               (catch Exception e (println e)))
+            (t/stop griterm)
             (.shutdown twitterstream))
         :else  
           (do 
             (try (println (load-string (str "(in-ns `grimoire.core) " input)))
                  (catch Exception e 
                    (do 
-                     (println e)
-                     (post (str (.getScreenName twitter) "がevalに失敗しました:" input " #Grimoire" " Exception:" e)))))
+                     (println e))))
             (print "Grimoire => ")
             (flush)
             (recur (read-line)))))))

@@ -50,3 +50,12 @@
     (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj")))
   (catch Exception e
     (get-tokens)))
+
+(try 
+  (def twitter (doto (.getInstance (TwitterFactory.))
+    (.setOAuthConsumer consumerKey,consumerSecret)
+    (.setOAuthAccessToken 
+      (AccessToken. 
+        (:token tokens) 
+        (:tokenSecret tokens)))))
+  (catch Exception e (println e)))

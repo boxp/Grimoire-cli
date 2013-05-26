@@ -1,21 +1,11 @@
 (ns grimoire.commands
   (:use [clojure.repl :as repl]
-        [grimoire.oauth :as oauth]
-        [grimoire.services]
-        [grimoire.listener])
+        [dollswar.math]
+        [grimoire.datas]
+        [grimoire.oauth :as oauth])
   (:import (twitter4j TwitterFactory)
            (twitter4j.auth AccessToken)
            (twitter4j StatusUpdate)))
-
-(try 
-  (def twitter (doto (.getInstance (TwitterFactory.))
-    (.setOAuthConsumer consumerKey,consumerSecret)
-    (.setOAuthAccessToken 
-      (AccessToken. 
-        (:token tokens) 
-        (:tokenSecret tokens)))))
-  (catch Exception e (println e)))
-
 
 (defn post 
   " Post tweets \nUsage: (post \"hoge\")"
@@ -54,19 +44,11 @@
            "reply: reply to tweet"
            "Get more information to (doc <commands>)."))
 
-(defn start []
-  "start userstream"
-  (.user twitterstream))
-
-(defn stop []
-  "stop userstream"
-  (.shutdown twitterstream))
-
 (defn retweet 
   "Retweet Timeline's status number."
   [statusnum]
   (try 
-    (let [status (.retweetStatus twitter (:id (tweets statusnum)))]
+    (let [status (.retweetStatus twitter (:id (@tweets statusnum)))]
       (str 
         "Success retweet: @" 
         (.. status getUser getScreenName)
@@ -79,7 +61,7 @@
   "Favorite Timeline's status number."
   [statusnum]
   (try
-    (let [status (.createFavorite twitter (:id (tweets statusnum)))]
+    (let [status (.createFavorite twitter (:id (@tweets statusnum)))]
       (str
         "Success Fav: @" 
         (.. status getUser getScreenName)
@@ -95,25 +77,23 @@
 
 (defn reply [statusnum & texts]
   "Reply to tweets"
-  (str "Success:" 
-    (.getText
-      (.updateStatus 
-        twitter 
-        (doto
-          (StatusUpdate. 
-            (str
-              \@
-              (:user
-                (tweets statusnum))
-              " "
-              (if 
-                (> (count (seq (apply str texts))) 140)
-                  (str (apply str (take 137 (seq (apply str texts)))) "...")
-                  (apply str texts)))))
-          (.setInReplyToStatusId
-            (:id 
-              (tweets statusnum)))))))
+  (let [reply (str \@ (:user (@tweets statusnum)) " " (apply str texts))]
+    (do
+      (println (str (apply str (take 137 (seq reply)))))
+      (str "Success:" 
+        (.getText
+          (.updateStatus 
+            twitter 
+            (doto
+              (StatusUpdate. 
+                (if 
+                  (> (count (seq reply)) 140)
+                  (str (apply str (take 137 (seq reply))) "...")
+                  (str \@ (:user (@tweets statusnum)) " " (apply str texts))))
+              (.inReplyToStatusId (:id (@tweets statusnum))))))))))
 
 ; デバック用
 (defn reload []
-  (load-file "src/grimoire/commands.clj"))
+  (do
+    (load-file "src/grimoire/commands.clj")
+    (load-file "src/grimoire/response.clj")))
