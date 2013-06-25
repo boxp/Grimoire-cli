@@ -5,8 +5,13 @@
         [grimoire.oauth :as oauth])
   (:import (twitter4j TwitterFactory)
            (twitter4j.auth AccessToken)
-           (twitter4j StatusUpdate)))
+           (twitter4j StatusUpdate)
+           (java.io File)))
 
+;pluginのロード
+;(load-file (str (System/getenv "HOME") ".grimoire/plugin/*")
+
+;コマンドたち
 (defn post 
   " Post tweets \nUsage: (post \"hoge\")"
   [& input]

@@ -1,8 +1,8 @@
 (ns grimoire.listener
   (:import (twitter4j UserStreamListener))
-  (:use [lanterna.terminal :as t]
+  (:use [seesaw.core :as ss]
+        [grimoire.seesaw]
         [grimoire.oauth]
-        [grimoire.lanterna]
         [grimoire.datas]))
 
 (def listener 
@@ -24,15 +24,6 @@
               (alter mentions conj newstatus)))
           (dosync
             (alter tweets conj newstatus))
-          (t/put-string 
-            griterm
-            (str
-              (- (count @tweets) 1)
-              " @"
-              (.. status getUser getScreenName) 
-              " - " 
-              (.. status getText)
-              "\n"))
           (print 
             (str
               (- (count @tweets) 1)

@@ -1,8 +1,7 @@
 (ns grimoire.core
-  (:require [lanterna.terminal :as t])
   (:use [clojure.repl]
-        [grimoire.lanterna]
         [grimoire.oauth :as oauth]
+        [grimoire.seesaw]
         [grimoire.commands]
         [grimoire.services]
         [grimoire.listener :as listener]
@@ -39,7 +38,6 @@
           (do 
             (try (println "bye bye!")
               (catch Exception e (println e)))
-            (t/stop griterm)
             (.shutdown twitterstream))
         :else  
           (do 
