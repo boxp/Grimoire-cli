@@ -1,34 +1,49 @@
 (ns grimoire.core
   (:use [clojure.repl]
+        [grimoire.lanterna]
         [grimoire.oauth :as oauth]
-        [grimoire.seesaw]
         [grimoire.commands]
         [grimoire.services]
         [grimoire.listener :as listener]
         [grimoire.settings])
+  (:require [lanterna.terminal :as t])
   (:gen-class))
 
 (defn -main []
   (do
 
-    (println "Grimoire has started v0.0.5\n"
-             "          _ ........_\n"
-             "          , ´,.-==-.ヽ\n"
-             "            ((ﾉﾉ))ﾉ）)\n"
-             (try
-               (str "          ハ) ﾟ ヮﾟﾉ)       Welcome " (.getScreenName twitter) "!\n")
-               (catch Exception e nil))
-             "          ~,く__,ネﾉ)つ\n"
-             "          |(ﾝ_l|,_,_ﾊ、\n"
-             "          ｀~ し'.ﾌ~´\n"
-             "                          \n"
-             "---------------------------\n"
-             "* Usage : (commands)      *\n"
-             "---------------------------\n"
-             "* Help  : (help)          *\n"
-             "* Exit  :  exit           *\n"
-             "* Stream: (start)         *\n"
-             "---------------------------\n")
+    (print
+      "Grimoire has started v0.0.6\n"
+      "_ ........_\n"
+      ", ´,.-==-.ヽ\n"
+      "l ((ﾉﾉ))ﾉ）)\n"
+      "ハ) ﾟ ヮﾟﾉ)\n"
+      "~,く__,ネﾉ)つ\n"
+      "|(ﾝ_l|,_,_ﾊ、\n"
+      "｀~ し'.ﾌ~´\n"
+
+     (try
+       (str "Welcome " (.getScreenName twitter) "!\n")
+       (catch Exception e nil))
+     "---------------------------\n"
+     "* Grimoire user guide     *\n"
+     "---------------------------\n"
+     "* Help  : (help)          *\n"
+     "* Exit  :  exit           *\n"
+     "* Stream: (start)         *\n"
+     "---------------------------\n")
+
+    ; lanterna repl
+
+;     (loop [input (t/get-key-blocking term)]
+;       (case input
+;           \q (do 
+;                 (t/clear term)
+;                 (pop-window "bye bye!" "quiting...")
+;                 (.shutdown twitterstream))
+;           :enter (newbuffer nil)
+;           (recur (t/get-key-blocking term))))))
+
 
     (print "Grimoire => ")
     (flush)
@@ -41,7 +56,10 @@
             (.shutdown twitterstream))
         :else  
           (do 
-            (try (println (load-string (str "(in-ns `grimoire.core) " input)))
+            (try (let [result (binding [*ns* (find-ns 'grimoire.core)] (load-string input))]
+                   (if result
+                     (println result)
+                     nil))
                  (catch Exception e 
                    (do 
                      (println e))))

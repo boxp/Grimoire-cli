@@ -1,8 +1,6 @@
 (ns grimoire.listener
   (:import (twitter4j UserStreamListener))
-  (:use [seesaw.core :as ss]
-        [grimoire.seesaw]
-        [grimoire.oauth]
+  (:use [grimoire.oauth]
         [grimoire.datas]))
 
 (def listener 

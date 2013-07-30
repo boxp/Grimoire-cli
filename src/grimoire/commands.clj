@@ -9,8 +9,8 @@
            (java.io File)))
 
 ;pluginのロード
-(let [file (File. (str (System/getenv "HOME") ".grimoire/plugin"))] 
-  (map load-file (file/list)))
+(let [file (File. (str (System/getenv "HOME") "/.grimoire/plugin"))] 
+  (map load-file (. file list)))
 
 ;コマンドたち
 (defn post 
