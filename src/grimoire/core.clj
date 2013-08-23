@@ -1,17 +1,26 @@
 (ns grimoire.core
   (:use [clojure.repl]
-        [grimoire.lanterna]
         [grimoire.oauth :as oauth]
         [grimoire.commands]
         [grimoire.services]
         [grimoire.listener :as listener]
-        [grimoire.settings])
-  (:require [lanterna.terminal :as t])
+        [grimoire.settings]
+        [grimoire.login-form])
+  (:import (javafx.application.Application)
+           (Login))
   (:gen-class))
 
+; 起動時に呼ばれる
+; dirty
 (defn -main []
   (do
 
+    ; twitterにログイン
+    (try (get-tokens) 
+      (catch Exception e (Application/launch Login (into-array String [])))) 
+    (gen-twitter)
+
+    ; タイトル
     (print
       "Grimoire has started v0.0.6\n"
       "_ ........_\n"
@@ -45,6 +54,8 @@
 ;           (recur (t/get-key-blocking term))))))
 
 
+    ; REPL
+    ; dirty
     (print "Grimoire => ")
     (flush)
     (loop [input (read-line)]
@@ -65,4 +76,4 @@
                      (println e))))
             (print "Grimoire => ")
             (flush)
-            (recur (read-line)))))))
+            (recur (read-line))))))

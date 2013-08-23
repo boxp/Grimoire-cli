@@ -2,7 +2,7 @@
   (:use [grimoire.oauth :as oauth]
         [grimoire.listener])
   (:import 
-    (twitter4j TwitterStreamFactory)
+    (twitter4j TwitterStreamFactory UserStreamListener)
     (twitter4j.conf ConfigurationContext)
     (twitter4j.conf ConfigurationBuilder)))
 
@@ -17,7 +17,7 @@
 
 (def twitterstream 
     (doto (.getInstance (TwitterStreamFactory. conf))
-      (.addListener listener)))
+      (.addListener ^twitter4j.UserStreamListener (listener))))
 
 (defn start []
   "start userstream"

@@ -12,29 +12,21 @@
 (def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
 (def consumerKey (:consumerKey consumers))
 (def consumerSecret (:consumerSecret consumers))
-
-(defn get-tokens [] 
+(def oauthurl
   (let [conf (ConfigurationContext/getInstance) 
-        auth (doto 
-                (OAuthAuthorization. conf) 
+        auth (doto (OAuthAuthorization. conf) 
+                (.setOAuthConsumer consumerKey,consumerSecret))]
+    (.. auth getOAuthRequestToken getAuthorizationURL)))
+
+(defn gen-tokens [pin] 
+  (let [conf (ConfigurationContext/getInstance) 
+        auth (doto (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
          (do  
-           (try 
-             (do
-               (try 
-                 (browse-url (def oauthurl (.. auth getOAuthRequestToken getAuthorizationURL)))
-                 (catch Exception e nil))
-               (println
-                 "Please access URL and get PIN:"
-                  oauthurl) 
-                 "\nInput PIN:")
-               (catch TwitterException e 
-                 (println 
-                  "Getting OAuth URL failed.")))
-             (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
+           (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
            (let 
-            [twitterTokens 
-              (.getOAuthAccessToken auth (read-line))]
+             [twitterTokens 
+               (.getOAuthAccessToken auth pin)]
              (do
                (def tokens 
                  {:token (.getToken twitterTokens) 
@@ -45,17 +37,16 @@
                    "/.grimoire/tokens.clj") 
                  (str tokens)))))))
 
-(try 
-  (def tokens 
-    (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj")))
-  (catch Exception e
-    (get-tokens)))
+(defn get-tokens []
+    (def tokens 
+      (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj"))))
 
-(try 
-  (def twitter (doto (.getInstance (TwitterFactory.))
-    (.setOAuthConsumer consumerKey,consumerSecret)
-    (.setOAuthAccessToken 
-      (AccessToken. 
-        (:token tokens) 
-        (:tokenSecret tokens)))))
-  (catch Exception e (println e)))
+(defn gen-twitter []
+  (try 
+    (def twitter (doto (.getInstance (TwitterFactory.))
+      (.setOAuthConsumer consumerKey,consumerSecret)
+      (.setOAuthAccessToken 
+        (AccessToken. 
+          (:token tokens) 
+          (:tokenSecret tokens)))))
+    (catch Exception e (println e))))

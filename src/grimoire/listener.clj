@@ -1,11 +1,14 @@
 (ns grimoire.listener
+  (:gen-class)
   (:import (twitter4j UserStreamListener))
   (:use [grimoire.oauth]
         [grimoire.datas]))
 
-(def listener 
-  (proxy [UserStreamListener] []
-    (onStatus [status]
+; Userstream status listener
+(defn listener []
+  (reify UserStreamListener
+
+    (onStatus [this status]
       (let [newstatus {:user (.. status getUser getScreenName)
                        :text (.. status getText)
                        :time (.. status getCreatedAt)
@@ -31,21 +34,21 @@
               (.. status getText)
               "\n")))))
 
-    (onDeletionNotice [statusDeletionNotice]
+    (onDeletionNotice [this statusDeletionNotice]
       (do
         (print 
           "Got a status deletion notice id:" 
           (.. statusDeletionNotice getStatusId)
           "\n")))
 
-    (onTrackLimitationNotice [numberOfLimitedStatuses]
+    (onTrackLimitationNotice [this numberOfLimitedStatuses]
       (do
         (print 
           "Got a track limitation notice:" 
           numberOfLimitedStatuses
           "\n")))
 
-    (onScrubGeo [userId upToStatusId]
+    (onScrubGeo [this userId upToStatusId]
       (do
         (print 
           "Got scrub_geo event userId:" 
@@ -54,19 +57,19 @@
           upToStatusId
           "\n")))
 
-    (onStallWarning [warning]
+    (onStallWarning [this warning]
       (do
         (print 
           "Got stall warning:" 
           warning
           "\n")))
 
-    (onFriendList [friendIds]
+    (onFriendList [this friendIds]
       (do
         (dosync
           (alter friends conj friendIds))))
 
-    (onFavorite [source target favoritedStatus]
+    (onFavorite [this source target favoritedStatus]
       (do
         (print 
           "You Gotta Fav! source:@" 
@@ -79,7 +82,7 @@
           (.getText favoritedStatus)
           "\n")))
 
-    (onUnfavorite [source target unfavoritedStatus]
+    (onUnfavorite [this source target unfavoritedStatus]
       (do
         (print 
           "Catched unFav! source:@" 
@@ -92,25 +95,22 @@
           (.getText unfavoritedStatus)
           "\n")))
 
-    (onFollow [source followedUser]
+    (onFollow [this source followedUser]
       (do
         (print 
           "onFollow source:@" 
           (.getScreenName source) 
           " target:@" 
           (.getScreenName followedUser)
-          "\n")
-        (if 
-          (= (.getScreenName followedUser) "alicepmaster")
-          (.createFriendship twitter (.getId source)))))
+          "\n")))
 
-    (onDirectMessage [directMessage]
+    (onDirectMessage [this directMessage]
       (print 
         "onDirectMessage text:" 
         (.getText directMessage)
         "\n"))
 
-    (onUserListMemberAddition [addedMember listOwner alist]
+    (onUserListMemberAddition [this addedMember listOwner alist]
       (print 
         (.getScreenName addedMember) 
         "listOwner:@" 
@@ -119,7 +119,7 @@
         (.getName alist)
         "\n"))
       
-    (onUserListMemberDeletion [deletedMember listOwner alist]
+    (onUserListMemberDeletion [this deletedMember listOwner alist]
       (print 
         (.getScreenName deletedMember) 
         "listOwner:@" 
@@ -128,7 +128,7 @@
         (.getName alist)
         "\n"))
 
-    (onUserListSubscription [subscriber listOwner alist]
+    (onUserListSubscription [this subscriber listOwner alist]
       (print 
         "onUserListSubscribed subscriber:@" 
         (.getScreenName subscriber) 
@@ -138,7 +138,7 @@
         (.getName alist)
         "\n"))
 
-    (onUserListUnsubscription [subscriber listOwner alist]
+    (onUserListUnsubscription [this subscriber listOwner alist]
       (print 
         "onUserListUnSubscribed subscriber:@" 
         (.getScreenName subscriber) 
@@ -148,7 +148,7 @@
         (.getName alist)
         "\n"))
 
-    (onUserListCreation [listOwner alist]
+    (onUserListCreation [this listOwner alist]
       (print
         "onUserListCreated listOwner:@"
         (.getScreenName listOwner)
@@ -156,7 +156,7 @@
         (.getName alist)
         "\n"))
 
-    (onUserListUpdate [listOwner alist]
+    (onUserListUpdate [this listOwner alist]
       (print
         "onUserListUpdated listOwner:@"
         (.getScreenName listOwner)
@@ -164,7 +164,7 @@
         (.getName alist)
         "\n"))
 
-    (onUserListDeletion [listOwner alist]
+    (onUserListDeletion [this listOwner alist]
       (print
         "onUserListDestroyed listOwner:@"
         (.getScreenName listOwner)
@@ -172,14 +172,14 @@
         (.getName alist)
         "\n"))
 
-    (onUserProfileUpdate [updatedUser]
+    (onUserProfileUpdate [this updatedUser]
       (do
         (print 
           "onUserProfileUpdated user:@"
           (.getScreenName updatedUser)
           "\n")))
 
-    (onBlock [source blockedUser]
+    (onBlock [this source blockedUser]
       (do
         (print 
           "onBlock user:@"
@@ -188,7 +188,7 @@
           (.getScreenName blockedUser)
           "\n")))
 
-    (onUnBlock [source unblockedUser]
+    (onUnblock [this source unblockedUser]
       (do
         (print 
           "onUnBlock user:@"
@@ -197,7 +197,7 @@
           (.getScreenName unblockedUser)
           "\n")))
 
-    (onException [ex]
+    (onException [this ex]
       (do
         (.printStackTrace ex)
         (print 

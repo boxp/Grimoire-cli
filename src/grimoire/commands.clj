@@ -8,11 +8,13 @@
            (twitter4j StatusUpdate)
            (java.io File)))
 
-;pluginのロード
+; pluginのロード
+; dirty
 (let [file (File. (str (System/getenv "HOME") "/.grimoire/plugin"))] 
   (map load-file (. file list)))
 
-;コマンドたち
+; コマンドたち
+; ツイート
 (defn post 
   " Post tweets \nUsage: (post \"hoge\")"
   [& input]
@@ -26,6 +28,7 @@
               (apply str input)))))
     (catch Exception e (println "Something has wrong." e))))
 
+; 20件のツイート取得
 (defn showtl 
   " Showing 20 new tweets from HomeTimeline.\nUsage: (showtl)"
   []
@@ -37,6 +40,7 @@
           (println (.getScreenName (.getUser (first status))) ":" (.getText (first status)))
           (recur (rest status) (+ i 1)))))))
 
+; コマンド一覧
 (defn help []
   (str     "\n"
            "*** Grimoire-cli Commands List***\n"
@@ -50,6 +54,7 @@
            "reply: reply to tweet"
            "Get more information to (doc <commands>)."))
 
+; リツイート
 (defn retweet 
   "Retweet Timeline's status number."
   [statusnum]
@@ -63,6 +68,7 @@
     (catch Exception e "something has wrong.")
     ))
 
+; ふぁぼふぁぼ
 (defn fav
   "Favorite Timeline's status number."
   [statusnum]
@@ -75,12 +81,15 @@
         (.. status getText)))
     (catch Exception e "something has wrong.")))
 
+; ふぁぼRT
+; clean
 (defn favret [statusnum]
   "Favorite and Retweet Timeline's status number"
   (do 
     (fav statusnum)
     (retweet statusnum)))
 
+; リプライ
 (defn reply [statusnum & texts]
   "Reply to tweets"
   (let [reply (str \@ (:user (@tweets statusnum)) " " (apply str texts))]
