@@ -6,8 +6,8 @@
         [grimoire.listener :as listener]
         [grimoire.settings]
         [grimoire.login-form])
-  (:import (javafx.application.Application)
-           (Login))
+  (:import (javafx.application Application)
+           Login)
   (:gen-class))
 
 ; 起動時に呼ばれる
@@ -19,10 +19,11 @@
     (try (get-tokens) 
       (catch Exception e (Application/launch Login (into-array String [])))) 
     (gen-twitter)
+    (gen-twitterstream)
 
     ; タイトル
     (print
-      "Grimoire has started v0.0.6\n"
+      "Grimoire has started v0.0.7\n"
       "_ ........_\n"
       ", ´,.-==-.ヽ\n"
       "l ((ﾉﾉ))ﾉ）)\n"
@@ -76,4 +77,4 @@
                      (println e))))
             (print "Grimoire => ")
             (flush)
-            (recur (read-line))))))
+            (recur (read-line)))))))

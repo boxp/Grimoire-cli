@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [dollswar "0.1.0-SNAPSHOT"]
                  [org.twitter4j/twitter4j-core"[3.0,)"]
-                 [org.twitter4j/twitter4j-stream"[3.0,)"]]
+                 [org.twitter4j/twitter4j-stream"[3.0,)"]
+                 [local.oracle/javafxrt "2.2.21"]]
   :main grimoire.core
   :aot [grimoire.core grimoire.listener]
   :java-source-paths ["src/java"])

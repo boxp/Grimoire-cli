@@ -9,36 +9,37 @@
            (twitter4j.auth OAuthAuthorization)
            (java.io File)))
 
+(def tokens (atom nil))
 (def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
 (def consumerKey (:consumerKey consumers))
 (def consumerSecret (:consumerSecret consumers))
-(def oauthurl
+(def oauthtoken
   (let [conf (ConfigurationContext/getInstance) 
         auth (doto (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
-    (.. auth getOAuthRequestToken getAuthorizationURL)))
+    (.. auth getOAuthRequestToken)))
 
 (defn gen-tokens [pin] 
   (let [conf (ConfigurationContext/getInstance) 
         auth (doto (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
-         (do  
-           (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
-           (let 
-             [twitterTokens 
-               (.getOAuthAccessToken auth pin)]
-             (do
-               (def tokens 
-                 {:token (.getToken twitterTokens) 
-                  :tokenSecret (.getTokenSecret twitterTokens)})
-               (spit 
-                 (str 
-                   (System/getenv "HOME") 
-                   "/.grimoire/tokens.clj") 
-                 (str tokens)))))))
+       (do  
+         (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
+         (let 
+           [twitterTokens 
+             (.getOAuthAccessToken auth oauthtoken pin)]
+           (do
+             (reset! tokens 
+               {:token (.getToken twitterTokens) 
+                :tokenSecret (.getTokenSecret twitterTokens)})
+             (spit 
+               (str 
+                 (System/getenv "HOME") 
+                 "/.grimoire/tokens.clj") 
+               (str @tokens)))))))
 
 (defn get-tokens []
-    (def tokens 
+    (reset! tokens 
       (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj"))))
 
 (defn gen-twitter []
@@ -47,6 +48,6 @@
       (.setOAuthConsumer consumerKey,consumerSecret)
       (.setOAuthAccessToken 
         (AccessToken. 
-          (:token tokens) 
-          (:tokenSecret tokens)))))
+          (:token @tokens) 
+          (:tokenSecret @tokens)))))
     (catch Exception e (println e))))
