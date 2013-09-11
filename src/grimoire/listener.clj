@@ -9,22 +9,21 @@
   (reify UserStreamListener
 
     (onStatus [this status]
-      (let [newstatus {:user (.. status getUser getScreenName)
-                       :text (.. status getText)
-                       :time (.. status getCreatedAt)
-                       :source (.. status getSource)
-                       :inreply (.. status getInReplyToStatusId)
-                       :retweeted (.. status getRetweetCount)
-                       :favorited? (.. status isFavorited)
-                       :id (.. status getId)
-                       :count (count @tweets)}]
+      (let [newstatus (str (.. status getUser getScreenName)
+                           (.. status getText)
+                           (.. status getCreatedAt)
+                           (.. status getSource)
+                           (.. status getInReplyToStatusId)
+                           (.. status getRetweetCount)
+                           (.. status isFavorited)
+                           (.. status getId)
+                           (count tweets))]
         (do
           (if 
             (some #(= (.. status getId) %) @friends)
             (dosync
               (alter mentions conj newstatus)))
-          (dosync
-            (alter tweets conj newstatus))
+          (.add tweets newstatus)
           (print 
             (str
               (- (count @tweets) 1)

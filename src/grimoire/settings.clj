@@ -1,7 +1,12 @@
-(ns grimoire.settings)
+(ns grimoire.settings
+  (:import (java.io File)))
+
+(def settings 
+  (atom {:offlinemode false
+         :postfailer true}))
 
 (try 
-  (def settings
+  (reset! settings
     (load-file 
       (str 
         (System/getenv "HOME") 
@@ -11,6 +16,7 @@
       (def settings
         {:offlinemode false
          :postfailer true})
+      (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
       (spit 
         (str
           (System/getenv "HOME")

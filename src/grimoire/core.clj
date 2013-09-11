@@ -5,22 +5,17 @@
         [grimoire.services]
         [grimoire.listener :as listener]
         [grimoire.settings]
-        [grimoire.login-form]
-        [grimoire.fxsession])
+        [grimoire.gui])
   (:import (javafx.application Application)
-           Login)
+           MainApp)
   (:gen-class))
 
 ; 起動時に呼ばれる
 ; dirty
 (defn -main []
   (do
-
     ; twitterにログイン
-    (try (get-tokens) 
-      (catch Exception e (Application/launch Login (into-array String [])))) 
-    (gen-twitter)
-    (gen-twitterstream)
+    (Application/launch MainApp (into-array String []))
 
     ; タイトル
     (print
