@@ -5,7 +5,8 @@
         [grimoire.services]
         [grimoire.listener :as listener]
         [grimoire.settings]
-        [grimoire.login-form])
+        [grimoire.login-form]
+        [grimoire.fxsession])
   (:import (javafx.application Application)
            Login)
   (:gen-class))
@@ -65,7 +66,7 @@
           (do 
             (try (println "bye bye!")
               (catch Exception e (println e)))
-            (.shutdown twitterstream))
+            (.shutdown @twitterstream))
         :else  
           (do 
             (try (let [result (binding [*ns* (find-ns 'grimoire.core)] (load-string input))]

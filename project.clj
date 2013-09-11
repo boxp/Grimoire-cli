@@ -9,5 +9,5 @@
                  [org.twitter4j/twitter4j-stream"[3.0,)"]
                  [local.oracle/javafxrt "2.2.21"]]
   :main grimoire.core
-  :aot [grimoire.core grimoire.listener]
+  :aot [grimoire.core grimoire.listener grimoire.login-form grimoire.fxsession]
   :java-source-paths ["src/java"])
