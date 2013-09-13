@@ -14,30 +14,32 @@
 ; dirty
 (defn -main []
   (do
-    ; twitterにログイン
+    ; javafx向け
     (Application/launch MainApp (into-array String []))
+    (.shutdown @twitterstream)))
 
+    ; コンソール向け
     ; タイトル
-    (print
-      "Grimoire has started v0.0.7\n"
-      "_ ........_\n"
-      ", ´,.-==-.ヽ\n"
-      "l ((ﾉﾉ))ﾉ）)\n"
-      "ハ) ﾟ ヮﾟﾉ)\n"
-      "~,く__,ネﾉ)つ\n"
-      "|(ﾝ_l|,_,_ﾊ、\n"
-      "｀~ し'.ﾌ~´\n"
-
-     (try
-       (str "Welcome " (.getScreenName twitter) "!\n")
-       (catch Exception e nil))
-     "---------------------------\n"
-     "* Grimoire user guide     *\n"
-     "---------------------------\n"
-     "* Help  : (help)          *\n"
-     "* Exit  :  exit           *\n"
-     "* Stream: (start)         *\n"
-     "---------------------------\n")
+;    (print
+;      "Grimoire has started v0.0.7\n"
+;      "_ ........_\n"
+;      ", ´,.-==-.ヽ\n"
+;      "l ((ﾉﾉ))ﾉ）)\n"
+;      "ハ) ﾟ ヮﾟﾉ)\n"
+;      "~,く__,ネﾉ)つ\n"
+;      "|(ﾝ_l|,_,_ﾊ、\n"
+;      "｀~ し'.ﾌ~´\n"
+;
+;     (try
+;       (str "Welcome " (.getScreenName twitter) "!\n")
+;       (catch Exception e nil))
+;     "---------------------------\n"
+;     "* Grimoire user guide     *\n"
+;     "---------------------------\n"
+;     "* Help  : (help)          *\n"
+;     "* Exit  :  exit           *\n"
+;     "* Stream: (start)         *\n"
+;     "---------------------------\n")
 
     ; lanterna repl
 
@@ -53,24 +55,24 @@
 
     ; REPL
     ; dirty
-    (print "Grimoire => ")
-    (flush)
-    (loop [input (read-line)]
-      (cond 
-        (= "exit" input)
-          (do 
-            (try (println "bye bye!")
-              (catch Exception e (println e)))
-            (.shutdown @twitterstream))
-        :else  
-          (do 
-            (try (let [result (binding [*ns* (find-ns 'grimoire.core)] (load-string input))]
-                   (if result
-                     (println result)
-                     nil))
-                 (catch Exception e 
-                   (do 
-                     (println e))))
-            (print "Grimoire => ")
-            (flush)
-            (recur (read-line)))))))
+;    (print "Grimoire => ")
+;    (flush)
+;    (loop [input (read-line)]
+;      (cond 
+;        (= "exit" input)
+;          (do 
+;            (try (println "bye bye!")
+;              (catch Exception e (println e)))
+;            (.shutdown @twitterstream))
+;        :else  
+;          (do 
+;            (try (let [result (binding [*ns* (find-ns 'grimoire.core)] (load-string input))]
+;                   (if result
+;                     (println result)
+;                     nil))
+;                 (catch Exception e 
+;                   (do 
+;                     (println e))))
+;            (print "Grimoire => ")
+;            (flush)
+;            (recur (read-line)))))))
