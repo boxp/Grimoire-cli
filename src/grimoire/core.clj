@@ -5,7 +5,8 @@
         [grimoire.services]
         [grimoire.listener :as listener]
         [grimoire.settings]
-        [grimoire.gui])
+        [grimoire.gui]
+        [grimoire.datas])
   (:import (javafx.application Application)
            MainApp)
   (:gen-class))
@@ -16,6 +17,11 @@
   (do
     ; javafx向け
     (Application/launch MainApp (into-array String []))
+    (spit 
+       (str 
+         (System/getenv "HOME") 
+         "/.grimoire/cache.clj")
+          (vec (take 100 @tweets)))
     (.shutdown @twitterstream)))
 
     ; コンソール向け

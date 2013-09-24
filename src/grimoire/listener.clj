@@ -2,16 +2,20 @@
   (:gen-class)
   (:import (twitter4j UserStreamListener)
            (javafx.scene.text Text Font)
-           (javafx.scene.layout HBox VBox)
+           (javafx.scene.control Hyperlink)
+           (javafx.scene.layout HBox VBox Priority)
            (javafx.scene Node)
            (javafx.scene.image Image ImageView)
            (javafx.application Platform)
            (javax.imageio ImageIO)
            (java.lang Runnable)
-           (java.lang Boolean))
+           (java.lang Boolean)
+           (javafx.event EventHandler)
+           (javafx.scene.paint Color))
   (:require [net.cgrand.enlive-html :as en])
   (:use [grimoire.oauth]
-        [grimoire.datas]))
+        [grimoire.datas]
+        [grimoire.commands]))
 
 (defn get-source
   [source]
@@ -30,24 +34,26 @@
   (reify UserStreamListener
 
     (onStatus [this status]
-      (let [source (get-source (.. status getSource))
-            image (Image. (^String .. status getUser getBiggerProfileImageURL) (double 48) (double 48) true true)
-            imageview (ImageView. image)
-            uname (doto 
-                    (Text. (.. status getUser getScreenName))
-                    (.setWrappingWidth 500))
-            text (doto
-                   (Text. (.. status getText))
-                   (.setWrappingWidth 500))
-            info (doto 
-                   (Text. 
-                     (str (.. status getCreatedAt) " " source " " (count @tweets)))
-                   (.setFont (Font. 10)))
-            vbox (VBox.)
+      (let [
             node (doto
                    (HBox.)
-                   (.setSpacing 10))
-
+                   (.setSpacing 10)
+                   (.setPrefWidth 500))
+            favb (doto (Hyperlink.)
+                   (.setText "★")
+                   (.setFont (Font. 10))
+                   (.setTextFill (Color/BLACK)))
+            retb (doto (Hyperlink.)
+                   (.setText "∞")
+                   (.setFont (Font. 10))
+                   (.setTextFill (Color/BLACK)))
+            favretb (doto (Hyperlink.)
+                      (.setText "★∞")
+                      (.setFont (Font. 10))
+                      (.setTextFill (Color/BLACK)))
+            delb (doto (Hyperlink.)
+                   (.setFont (Font. 10))
+                   (.setText "×"))
             newstatus {:user (.. status getUser getScreenName)
                        :text (.. status getText)
                        :time (.. status getCreatedAt)
@@ -57,16 +63,85 @@
                        :retweeted (.. status getRetweetCount)
                        :favorited? (.. status isFavorited)
                        :id (.. status getId)
-                       :count (count @tweets)}]
+                       :count (count @tweets)
+                       :image (.. status getUser getBiggerProfileImageURL)}
+            source (get-source (.. status getSource))
+            image (Image. (^String .. status getUser getBiggerProfileImageURL) (double 48) (double 48) true true)
+            imageview (ImageView. image)
+            uname (doto (Text. (.. status getUser getScreenName))
+                    (.setWrappingWidth 440))
+            info (doto 
+                   (Text. 
+                     (str (.. status getCreatedAt) " " source " " (count @tweets)))
+                   (.setFont (Font. 10)))
+            vbox (VBox.)
+            hbox (doto (HBox.)
+                   (.setSpacing 5))
+            text (doto (Text. (.. status getText))
+                   (.setFont (Font. @tweets-size))
+                   (.. wrappingWidthProperty (bind (.. node widthProperty (add -150)))))]
         (do
+          (doto (. hbox getChildren)
+            (.add info)
+            (.add favb)
+            (.add retb)
+            (.add favretb))
+          (if (= (newstatus :user) (.getScreenName twitter))
+            (.. hbox getChildren (add delb)))
           (doto (. vbox getChildren) 
             (.add uname)
             (.add text)
-            (.add info))
+            (.add hbox))
           (doto (. node getChildren) 
             (.add imageview)
             (.add vbox))
-
+          (doto favb
+            (.setOnMouseClicked (reify EventHandler
+                                  (handle [this me]
+                                    (let [favb (.getSource me)]
+                                      (if (= (.getTextFill favb) (Color/BLACK))
+                                        (do
+                                          (.setTextFill favb (Color/ORANGE))
+                                          (fav (newstatus :count)))
+                                        (do
+                                          (.setTextFill favb (Color/BLACK))
+                                          (unfav (newstatus :count)))))))))
+          (doto retb
+            (.setOnMouseClicked (reify EventHandler
+                                  (handle [this me]
+                                    (let [retb (.getSource me)]
+                                      (if (= (.getTextFill retb) (Color/BLACK))
+                                        (do
+                                          (.setTextFill retb (Color/CYAN))
+                                          (ret (newstatus :count)))
+                                        (do
+                                          (.setTextFill retb (Color/BLACK))
+                                          (unret (newstatus :count)))))))))
+          (doto favretb 
+            (.setOnMouseClicked (reify EventHandler
+                                  (handle [this me]
+                                    (let [favretb (.getSource me)]
+                                      (if (= (.getTextFill favretb) (Color/BLACK))
+                                        (do
+                                          (.setTextFill favretb (Color/ORANGE))
+                                          (favret (newstatus :count)))
+                                        (do
+                                          (.setTextFill favretb (Color/BLACK))
+                                          (unfavret (newstatus :count)))))))))
+          (doto delb 
+            (.setOnMouseClicked (reify EventHandler
+                                  (handle [this me]
+                                    (let [delb (.getSource me)]
+                                      (if (= (.getTextFill delb) (Color/BLACK))
+                                        (do
+                                          (.setTextFill delb (Color/RED))
+                                          (favret (newstatus :count)))
+                                        (do
+                                          (.setTextFill delb (Color/BLACK))
+                                          (unfavret (newstatus :count)))))))))
+          (HBox/setHgrow text Priority/SOMETIMES)
+          (HBox/setHgrow vbox Priority/SOMETIMES)
+          (HBox/setHgrow node Priority/SOMETIMES)
           (if 
             (some #(= (.. status getId) %) @friends)
             (dosync
@@ -76,7 +151,10 @@
           (Platform/runLater
             (reify Runnable
               (run [this]
-                (.add nodes 0 node)))))))
+                (do
+                  (.add @nodes 0 node)
+                  (if (> (.size @nodes) @max-nodes)
+                    (.remove @nodes @max-nodes (.size @nodes))))))))))
 
     (onDeletionNotice [this statusDeletionNotice]
       (do

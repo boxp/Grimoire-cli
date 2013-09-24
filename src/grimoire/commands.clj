@@ -55,7 +55,7 @@
            "Get more information to (doc <commands>)."))
 
 ; リツイート
-(defn retweet 
+(defn ret
   "Retweet Timeline's status number."
   [statusnum]
   (try 
@@ -65,8 +65,20 @@
         (.. status getUser getScreenName)
         " - "
         (.. status getText)))
-    (catch Exception e "something has wrong.")
-    ))
+    (catch Exception e "something has wrong.")))
+
+; リツイートの取り消し
+(defn unret
+  "UnRetweet Timeline's status number."
+  [statusnum]
+  (try 
+    (let [status (.destroyStatus twitter (:id (@tweets statusnum)))]
+      (str 
+        "Success unretweet: @" 
+        (.. status getUser getScreenName)
+        " - "
+        (.. status getText)))
+    (catch Exception e "something has wrong.")))
 
 ; ふぁぼふぁぼ
 (defn fav
@@ -81,13 +93,47 @@
         (.. status getText)))
     (catch Exception e "something has wrong.")))
 
+; あんふぁぼ
+(defn unfav
+  "Favorite Timeline's status number."
+  [statusnum]
+  (try
+    (let [status (.destroyFavorite twitter (:id (@tweets statusnum)))]
+      (str
+        "Success UnFav: @" 
+        (.. status getUser getScreenName)
+        " - "
+        (.. status getText)))
+    (catch Exception e "something has wrong.")))
+
 ; ふぁぼRT
 ; clean
 (defn favret [statusnum]
   "Favorite and Retweet Timeline's status number"
   (do 
     (fav statusnum)
-    (retweet statusnum)))
+    (ret statusnum)))
+
+; ふぁぼRT
+; clean
+(defn unfavret [statusnum]
+  "UnFavorite and UnRetweet Timeline's status number"
+  (do 
+    (unfav statusnum)
+    (unret statusnum)))
+
+; つい消し
+(defn del
+  "Delete Timeline's status number."
+  [statusnum]
+  (try 
+    (let [status (.destroyStatus twitter (:id (@tweets statusnum)))]
+      (str 
+        "Success delete: @" 
+        (.. status getUser getScreenName)
+        " - "
+        (.. status getText)))
+    (catch Exception e "something has wrong.")))
 
 ; リプライ
 (defn reply [statusnum & texts]
