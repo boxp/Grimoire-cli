@@ -1,0 +1,16 @@
+.root {
+  -fx-background-color: #002b36;
+}
+.label {
+  -fx-font-size: 24pt;
+  -fx-text-fill: #b58900;
+  -fx-background-color: #073642;
+}
+#maintl {
+  -fx-opacity: 1;
+  -fx-background-color: #002b36;
+}
+#listv {
+  -fx-opacity: 1;
+  -fx-background-color: #002b36;
+}

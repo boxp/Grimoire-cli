@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?language Clojure?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.input.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
+  <children>
+    <Label fx:id="welcome" layoutX="60.0" layoutY="34.0" prefHeight="44.0" prefWidth="154.0" text="Welcome.">
+      <font>
+        <Font size="36.0" />
+      </font>
+    </Label>
+    <Label id="" fx:id="subtitle" layoutX="60.0" layoutY="78.0" prefHeight="21.0" prefWidth="140.00009999999747" text="Grimoireへようこそ">
+      <font>
+        <Font size="15.0" fx:id="x1" />
+      </font>
+    </Label>
+    <Button id="" fx:id="urlbtn" font="$x1" layoutX="60.0" layoutY="175.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="175.0" text="Copy sign up URL.">
+      <effect>
+        <Reflection />
+      </effect>
+    </Button>
+    <TextField fx:id="pinfd" layoutX="60.0" layoutY="311.0" prefWidth="200.0" promptText="PINコードを入力">
+      <effect>
+        <GaussianBlur radius="1.1208053691275168">
+          <input>
+            <Reflection />
+          </input>
+        </GaussianBlur>
+      </effect>
+    </TextField>
+    <ImageView fx:id="alice" fitHeight="395.0" fitWidth="262.33319091796875" layoutX="338.0" layoutY="3.0" pickOnBounds="true" preserveRatio="false" />
+    <Label fx:id="copyed" layoutX="60.0" layoutY="269.0" prefHeight="21.0" prefWidth="175.0" text="" />
+    <Button fx:id="signup" layoutX="270.0" layoutY="313.0" mnemonicParsing="false" text="Sign up">
+      <effect>
+        <Reflection />
+      </effect>
+    </Button>
+  </children>
+  <fx:script><![CDATA[
+    (use '[grimoire.commands]
+         '[grimoire.oauth]
+         '[grimoire.datas]
+         '[grimoire.services]
+         '[grimoire.gui])
+    (import '(javafx.scene.input Clipboard ClipboardContent)
+            '(javafx.application Application Platform)
+            '(javafx.scene Node Scene)
+            '(javafx.scene.web WebView)
+            '(javafx.scene.input KeyCode)
+            '(javafx.scene.text Text Font FontWeight)
+            '(javafx.scene.control Label TextField PasswordField Button Hyperlink ListView)
+            '(javafx.scene.layout GridPane HBox VBox Priority)
+            '(javafx.scene.paint Color)
+            '(javafx.scene.image Image ImageView)
+            '(javafx.geometry Pos Insets)
+            '(javafx.event EventHandler)
+            '(javafx.stage Stage Modality)
+            '(javafx.scene.web WebView)
+            '(javafx.collections FXCollections ObservableList))   
+    (let [authurl (.getAuthorizationURL oauthtoken)
+          cb (Clipboard/getSystemClipboard)
+          cbc (doto (ClipboardContent.)
+                (.putString authurl))]
+      (do 
+        (doto signup
+          (.setOnAction (proxy [EventHandler] []
+                                (handle [_]
+                                  (do 
+                                    (gen-tokens (.getText pinfd))
+                                    (gen-twitter)
+                                    (gen-twitterstream)
+                                    (start)
+                                    (mainwin (Stage.)))))))
+        (doto urlbtn
+         (.setOnAction (proxy [EventHandler] []
+                               (handle [_]
+                                 (do
+                                   (.setContent cb cbc)
+                                   (.setText copyed "コピーしました"))))))))
+        
+    
+  ]]></fx:script>
+</AnchorPane>

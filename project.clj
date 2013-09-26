@@ -9,7 +9,8 @@
                  [org.twitter4j/twitter4j-stream"[3.0,)"]
                  [local.oracle/javafxrt "2.2.21"]
                  [clj-http "0.7.7"]
-                 [enlive "1.1.4"]]
+                 [enlive "1.1.4"]
+                 [clojure-jsr223/clojure-jsr223 "1.0"]]
   :main grimoire.core
   :resource-paths ["resources"]
   :aot [grimoire.core grimoire.listener grimoire.login-form grimoire.fxsession]
