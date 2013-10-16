@@ -13,7 +13,7 @@
 
 <AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
   <children>
-    <Label fx:id="welcome" layoutX="60.0" layoutY="34.0" prefHeight="44.0" prefWidth="154.0" text="Welcome.">
+    <Label fx:id="welcome" layoutX="60.0" layoutY="34.0" prefHeight="44.0" prefWidth="175.0" text="Welcome.">
       <font>
         <Font size="36.0" />
       </font>
@@ -77,9 +77,9 @@
                                   (do 
                                     (gen-tokens (.getText pinfd))
                                     (gen-twitter)
-                                    (gen-twitterstream)
+                                    (gen-twitterstream listener)
                                     (start)
-                                    (mainwin (Stage.)))))))
+                                    (mainwin @main-stage))))))
         (doto urlbtn
          (.setOnAction (proxy [EventHandler] []
                                (handle [_]

@@ -1,6 +1,8 @@
 (ns grimoire.services
   (:use [grimoire.oauth :as oauth]
-        [grimoire.listener])
+        [grimoire.listener]
+        [grimoire.datas]
+        [clojure.tools.nrepl.server :only (start-server stop-server)])
   (:import 
     (twitter4j TwitterStreamFactory UserStreamListener)
     (twitter4j.conf ConfigurationContext)
@@ -9,7 +11,7 @@
 (def twitterstream (atom nil))
 
 (defn gen-twitterstream
-  []
+  [listener]
   (let [confbuilder (doto (ConfigurationBuilder.)
     (.setOAuthConsumerKey (:consumerKey consumers))
     (.setOAuthConsumerSecret (:consumerSecret consumers))
@@ -20,11 +22,23 @@
         (doto (.getInstance (TwitterStreamFactory. conf))
           (.addListener ^twitter4j.UserStreamListener (listener))))))
   
-(defn start []
+(defn start 
+  []
   "start userstream"
   (.user @twitterstream))
 
-(defn stop []
+(defn stop 
+  []
   "stop userstream"
   (.shutdown @twitterstream))
 
+(defn gen-nrepl!
+  [port]
+  "start nrepl server"
+  (reset! nrepl-server 
+    (start-server :port port)))
+
+(defn stop-nrepl
+  [server]
+  "stop nrepl server"
+  (stop-server server))

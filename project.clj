@@ -4,14 +4,13 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [dollswar "0.1.0-SNAPSHOT"]
                  [org.twitter4j/twitter4j-core"[3.0,)"]
                  [org.twitter4j/twitter4j-stream"[3.0,)"]
+                 [org.twitter4j/twitter4j-async"[3.0,)"]
                  [local.oracle/javafxrt "2.2.21"]
-                 [clj-http "0.7.7"]
                  [enlive "1.1.4"]
+                 [org.clojure/tools.nrepl "0.2.3"]
                  [clojure-jsr223/clojure-jsr223 "1.0"]]
   :main grimoire.core
   :resource-paths ["resources"]
-  :aot [grimoire.core grimoire.listener grimoire.login-form grimoire.fxsession]
   :java-source-paths ["src/java"])

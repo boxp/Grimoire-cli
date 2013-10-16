@@ -1,8 +1,16 @@
 .root {
   -fx-background-color: #002b36;
 }
-.label {
-  -fx-font-size: 24pt;
+#button {
+  -fx-background-color: #ff5400;
+}
+#label {
+  -fx-text-fill: #b58900;
+}
+#profile {
+  -fx-background-color: #ffffff;
+}
+#node {
   -fx-text-fill: #b58900;
   -fx-background-color: #073642;
 }
@@ -10,7 +18,15 @@
   -fx-opacity: 1;
   -fx-background-color: #002b36;
 }
-#listv {
-  -fx-opacity: 1;
-  -fx-background-color: #002b36;
+.list-cell:selected {
+  -fx-background-color: #cb4b16;
+}
+.list-cell:focused {
+  -fx-border-color: #6c71c4;
+}
+.list-cell:focus {
+  -fx-border-color: #6c71c4;
+}
+#mentions {
+  -fx-border-color: #cb4b16;
 }

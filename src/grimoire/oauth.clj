@@ -1,12 +1,8 @@
 (ns grimoire.oauth
   (:use [clojure.java.browse])
-  (:import (twitter4j Status)
-           (twitter4j Twitter)
-           (twitter4j TwitterFactory)
-           (twitter4j TwitterException)
-           (twitter4j.auth AccessToken)
+  (:import (twitter4j Status Twitter TwitterFactory TwitterException)
+           (twitter4j.auth AccessToken OAuthAuthorization)
            (twitter4j.conf ConfigurationContext)
-           (twitter4j.auth OAuthAuthorization)
            (java.io File)))
 
 (def tokens (atom nil))
