@@ -3,13 +3,12 @@
         [grimoire.datas]
         [grimoire.oauth :as oauth])
   (:require [net.cgrand.enlive-html :as en])
-  (:import (twitter4j TwitterFactory)
+  (:import (twitter4j TwitterFactory Query)
            (twitter4j.auth AccessToken)
            (twitter4j StatusUpdate)
            (javafx.scene.input Clipboard ClipboardContent)
            (javafx.application Application Platform)
            (javafx.scene Node Scene)
-           (javafx.scene.web WebView)
            (javafx.scene.input KeyCode)
            (javafx.scene.text Text Font FontWeight)
            (javafx.scene.control Label TextField PasswordField Button Hyperlink ListView)
@@ -20,7 +19,6 @@
            (javafx.geometry Pos Insets)
            (javafx.event EventHandler)
            (javafx.stage Stage Modality)
-           (javafx.scene.web WebView)
            (javafx.collections FXCollections ObservableList)
            (javafx.fxml FXML FXMLLoader)
            (java.io File)))
@@ -338,6 +336,13 @@
     (if home
       home
       (System/getProperty "user.home"))))
+
+(defn search
+  [& strs]
+  (map gen-node!
+    (map add-newstatus!
+      (reverse
+        (.. twitter (search (Query. (apply str strs))) getTweets)))))
 
 ; デバック用
 (defn reload []

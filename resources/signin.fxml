@@ -48,6 +48,7 @@
   <fx:script><![CDATA[
     (use '[grimoire.commands]
          '[grimoire.oauth]
+         '[grimoire.listener]
          '[grimoire.datas]
          '[grimoire.services]
          '[grimoire.gui])

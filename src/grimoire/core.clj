@@ -7,6 +7,7 @@
         [grimoire.gui]
         [grimoire.datas])
   (:import (javafx.application Application)
+           (javafx.embed.swing JFXPanel)
            (java.io File)
            MainApp)
   (:gen-class))
@@ -16,6 +17,8 @@
 ; dirty
 (defn -main
   ([] (do
+        ; init Toolkit
+        (JFXPanel.)
         ; pluginのロード
         ; dirty
         (let [file (File.  (str get-home "/.grimoire/plugin"))] 
@@ -25,7 +28,7 @@
           (try (load-file 
                  (str (get-home)
                    "/.grimoire.clj"))
-            (catch Exception e nil)))
+            (catch Exception e (println e))))
         ; javafx向け
         (Application/launch MainApp (into-array String []))
         (spit 
