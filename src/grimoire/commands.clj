@@ -231,18 +231,31 @@
                      (getStatusNum [] ~statusnum)) 
                    (.setSpacing 10)
                    (.setPrefWidth 350))
-        source (get-source (.. status getSource))
-        image (Image. (.. status getUser getBiggerProfileImageURL) (double 73) (double 73) true true)
+        source (if (.. status isRetweet)
+                 (get-source (.. status getRetweetedStatus getSource))
+                 (get-source (.. status getSource)))
+        image (if (.. status isRetweet)
+                (Image. (.. status getRetweetedStatus getUser getBiggerProfileImageURL) (double 73) (double 73) true true)
+                (Image. (.. status getUser getBiggerProfileImageURL) (double 73) (double 73) true true))
         imageview (doto (ImageView. image)
                     (.setFitHeight (double 48))
                     (.setFitWidth (double 48)))
-        uname (doto (Text. (.. status getUser getScreenName))
-                (.setId "profile")
-                (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -160)))))
-        info (doto 
-               (Text. 
-                 (str (.. status getCreatedAt) " " source " " statusnum))
-               (.setFont (Font. 10)))
+        uname (if (.. status isRetweet)
+                (doto (Text. (str (.. status getRetweetedStatus getUser getScreenName) " Retweeted by " (.. status getUser getScreenName)))
+                  (.setId "profile")
+                  (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -160)))))
+                (doto (Text. (.. status getUser getScreenName))
+                  (.setId "profile")
+                  (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -160))))))
+        info (if (.. status isRetweet)
+               (doto 
+                 (Text. 
+                   (str (.. status getRetweetedStatus getCreatedAt) " " source " " statusnum))
+                 (.setFont (Font. 10)))
+               (doto 
+                 (Text. 
+                   (str (.. status getCreatedAt) " " source " " statusnum))
+                 (.setFont (Font. 10))))
         vbox (VBox.)
         downer (doto (HBox.)
                (.setSpacing 5))
@@ -269,9 +282,13 @@
                    reti-hover)))
         repb (doto (Button.)
                (.setGraphic repi))
-        text (doto (Text. (.getText status))
-               (.setFont (Font. @tweets-size))
-               (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80)))))]
+        text (if (.. status isRetweet)
+               (doto (Text. (.. status getRetweetedStatus getText))
+                 (.setFont (Font. @tweets-size))
+                 (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80)))))
+               (doto (Text. (.. status getText))
+                 (.setFont (Font. @tweets-size))
+                 (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80))))))]
     (do
       (doto favb
         (.setOnMouseClicked
