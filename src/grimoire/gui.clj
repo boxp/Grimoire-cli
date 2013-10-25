@@ -46,12 +46,13 @@
       (.. stage getIcons (add (Image. "Grimoire_logo.png" (double 32) (double 32) true true)))
       ; add mentioins tweets
       (add-runlater
-        (do
-          ; I couldn't make sence how this code delete. 
-          (dosync
-            (alter tweets (comp vec concat) mentions))
-          (map gen-node! mentions)
-          (map gen-node! mentions)))
+        (future
+          (do
+            ; I couldn't make sence how this code delete. 
+            (dosync
+              (alter tweets (comp vec concat) mentions))
+            (print (map gen-node! mentions))
+            (map gen-node! mentions))))
       (doto stage 
         (.setTitle "Grimoire - v0.1.2")
         (.setScene scene)

@@ -13,6 +13,7 @@
            (javafx.scene.input KeyCode)
            (javafx.scene.text Text Font FontWeight)
            (javafx.scene.control Label TextField PasswordField Button Hyperlink ListView)
+           (javafx.scene.web WebView)
            (java.lang Runnable)
            (javafx.scene.layout GridPane HBox VBox Priority)
            (javafx.scene.paint Color)
@@ -81,53 +82,57 @@
 (defn ret
   "Retweet Timeline's status number."
   [statusnum]
-  (try 
-    (let [status (.retweetStatus twitter (.getId (@tweets statusnum)))]
-      (str 
-        "Success retweet: @" 
-        (.. status getUser getScreenName)
-        " - "
-        (.. status getText)))
-    (catch Exception e "something has wrong.")))
+  (future
+    (try 
+      (let [status (.retweetStatus twitter (.getId (@tweets statusnum)))]
+        (str 
+          "Success retweet: @" 
+          (.. status getUser getScreenName)
+          " - "
+          (.. status getText)))
+      (catch Exception e "something has wrong."))))
 
 ; リツイートの取り消し
 (defn unret
   "UnRetweet Timeline's status number."
   [statusnum]
-  (try 
-    (let [status (.destroyStatus twitter (.getId (@tweets statusnum)))]
-      (str 
-        "Success unretweet: @" 
-        (.. status getUser getScreenName)
-        " - "
-        (.. status getText)))
-    (catch Exception e "something has wrong.")))
+  (future
+    (try 
+      (let [status (.destroyStatus twitter (.getId (@tweets statusnum)))]
+        (str 
+          "Success unretweet: @" 
+          (.. status getUser getScreenName)
+          " - "
+          (.. status getText)))
+      (catch Exception e "something has wrong."))))
 
 ; ふぁぼふぁぼ
 (defn fav
   "Favorite Timeline's status number."
   [statusnum]
-  (try
-    (let [status (.createFavorite twitter (.getId (@tweets statusnum)))]
-      (str
-        "Success Fav: @" 
-        (.. status getUser getScreenName)
-        " - "
-        (.. status getText)))
-    (catch Exception e "something has wrong.")))
+  (future
+    (try
+      (let [status (.createFavorite twitter (.getId (@tweets statusnum)))]
+        (str
+          "Success Fav: @" 
+          (.. status getUser getScreenName)
+          " - "
+          (.. status getText)))
+      (catch Exception e "something has wrong."))))
 
 ; あんふぁぼ
 (defn unfav
   "Favorite Timeline's status number."
   [statusnum]
-  (try
-    (let [status (.destroyFavorite twitter (.getId (@tweets statusnum)))]
-      (str
-        "Success UnFav: @" 
-        (.. status getUser getScreenName)
-        " - "
-        (.. status getText)))
-    (catch Exception e "something has wrong.")))
+  (future
+    (try
+      (let [status (.destroyFavorite twitter (.getId (@tweets statusnum)))]
+        (str
+          "Success UnFav: @" 
+          (.. status getUser getScreenName)
+          " - "
+          (.. status getText)))
+      (catch Exception e "something has wrong."))))
 
 ; ふぁぼRT
 ; clean
@@ -162,19 +167,20 @@
 (defn reply [statusnum & texts]
   "Reply to tweets"
   (let [reply (str \@ (.. (@tweets statusnum) getUser getScreenName) " " (apply str texts))]
-    (do
-      (println (str (apply str (take 137 (seq reply)))))
-      (str "Success:" 
-        (.getText
-          (.updateStatus 
-            twitter 
-            (doto
-              (StatusUpdate. 
-                (if 
-                  (> (count (seq reply)) 140)
-                  (str (apply str (take 137 (seq reply))) "...")
-                  (str \@ (.. (@tweets statusnum) getUser getScreenName) " " (apply str texts))))
-              (.inReplyToStatusId (.getId (@tweets statusnum))))))))))
+    (future
+      (do
+        (println (str (apply str (take 137 (seq reply)))))
+        (str "Success:" 
+          (.getText
+            (.updateStatus 
+              twitter 
+              (doto
+                (StatusUpdate. 
+                  (if 
+                    (> (count (seq reply)) 140)
+                    (str (apply str (take 137 (seq reply))) "...")
+                    (str \@ (.. (@tweets statusnum) getUser getScreenName) " " (apply str texts))))
+                (.inReplyToStatusId (.getId (@tweets statusnum)))))))))))
 
 ; gen-newstatus
 (defn gen-newstatus [status]
@@ -272,30 +278,21 @@
           (proxy [EventHandler] []
             (handle [_]
               (add-runlater
-                (future
-                  (if (.isFavorited status)
-                    (do (unfav statusnum)
-                      (.setGraphic favb favi-hover))
-                    (do (fav statusnum)
-                      (.setGraphic favb favi-on)))))))))
+                (if (.isFavorited status)
+                  (do (unfav statusnum)
+                    (.setGraphic favb favi-hover))
+                  (do (fav statusnum)
+                    (.setGraphic favb favi-on))))))))
       (doto retb
         (.setOnMouseClicked
           (proxy [EventHandler] []
             (handle [_]
               (add-runlater
-                (future
-                  (if (.isRetweeted status)
-                    (do (unret statusnum)
-                      (.setGraphic retb reti-hover))
-                    (do (ret statusnum)
-                      (.setGraphic retb reti-on)))))))))
-      ;(doto repb
-      ;  (.setMouseClicked
-      ;    (proxy [EventHandler] []
-      ;      (handle [_]
-      ;        (add-runlater
-      ;          (future
-                  
+                (if (.isRetweeted status)
+                  (do (unret statusnum)
+                    (.setGraphic retb reti-hover))
+                  (do (ret statusnum)
+                    (.setGraphic retb reti-on))))))))
       (doto (. downer getChildren)
         (.add info))
       (doto (. upper getChildren)
@@ -367,17 +364,29 @@
 (defn gvim
   "Edit input field from gvim"
   []
-  (add-runlater
-    (future
+  (binding [*ns* (find-ns 'grimoire.core)]
+    (future 
       (do
-        (sh "gvim" (str (get-home) "/.grimoire/.tmp"))
-        (load-file (str (get-home) "/.grimoire/.tmp"))))))
+        (sh "gvim" 
+          (str (get-home) "/.grimoire/.tmp")))
+        (load-file 
+          (str (get-home) "/.grimoire/.tmp")))))
+
+(defn gen-webview
+  "Gen webview from url."
+  [url]
+  (let [webview (WebView.)
+        engine (doto (. webview getEngine)
+                 (.load url))]
+    (doto (Stage.)
+      (.setScene (Scene. webview 800 600))
+      (.show))))
 
 ; デバック用
 (defn reload 
 ([]
   (do
-    (load-file (str (get-home) ".grimoire.clj"))
+    (load-file (str (get-home) "/.grimoire.clj"))
     (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/commands.clj"))))
 ([file]
   (do
