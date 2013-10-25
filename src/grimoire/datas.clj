@@ -1,5 +1,6 @@
 (ns grimoire.datas
-  (:import (javafx.collections FXCollections ObservableList)))
+  (:import (javafx.collections FXCollections ObservableList)
+           (javafx.scene Node)))
 
 ; twitter
 (def tweets (ref [])) 
@@ -23,3 +24,4 @@
 (def listv (atom nil))
 (def mainscene (atom nil))
 (def theme (atom nil))
+(def pns (atom nil))

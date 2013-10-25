@@ -1,5 +1,6 @@
 (ns grimoire.commands
-  (:use [clojure.repl :as repl]
+  (:use [clojure.java.shell]
+        [clojure.repl :as repl]
         [grimoire.datas]
         [grimoire.oauth :as oauth])
   (:require [net.cgrand.enlive-html :as en])
@@ -37,13 +38,14 @@
   " Post tweets \nUsage: (post \"hoge\")"
   [& input]
   (try 
-    (str "Success:" 
-      (.getText 
-        (.updateStatus twitter 
-          (if 
-            (> (count (seq (apply str input))) 140)
-              (str (apply str (take 137 (seq (apply str input)))) "...")
-              (apply str input)))))
+    (future
+      (str "Success:" 
+        (.getText 
+          (.updateStatus twitter 
+            (if 
+              (> (count (seq (apply str input))) 140)
+                (str (apply str (take 137 (seq (apply str input)))) "...")
+                (apply str input))))))
     (catch Exception e (println "Something has wrong." e))))
 
 ; 20件のツイート取得
@@ -216,8 +218,11 @@
 
 ; gen-node
 (defn gen-node! 
+  "Generate node and add to listview."
   [status]
-  (let [node (doto (HBox.) 
+  (let [statusnum (.indexOf @tweets status)
+        node (doto (proxy [HBox] []
+                     (getStatusNum [] ~statusnum)) 
                    (.setSpacing 10)
                    (.setPrefWidth 350))
         source (get-source (.. status getSource))
@@ -230,7 +235,7 @@
                 (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -160)))))
         info (doto 
                (Text. 
-                 (str (.. status getCreatedAt) " " source " " (.indexOf @tweets status)))
+                 (str (.. status getCreatedAt) " " source " " statusnum))
                (.setFont (Font. 10)))
         vbox (VBox.)
         downer (doto (HBox.)
@@ -245,6 +250,7 @@
                    favi-hover)))
         reti-hover (ImageView. (Image. "retweet_hover.png" (double 16) (double 16) true true))
         reti-on (ImageView. (Image. "retweet_on.png" (double 16) (double 16) true true))
+        repi (ImageView. (Image. "reply_hover.png" (double 16) (double 16) true true))
         retb (doto (Button.) 
                (.setGraphic
                  (if (.isRetweeted status) 
@@ -255,6 +261,8 @@
                  (if (.isFavorited status) 
                    reti-on
                    reti-hover)))
+        repb (doto (Button.)
+               (.setGraphic repi))
         text (doto (Text. (.getText status))
                (.setFont (Font. @tweets-size))
                (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80)))))]
@@ -264,21 +272,30 @@
           (proxy [EventHandler] []
             (handle [_]
               (add-runlater
-                (if (.isFavorited status)
-                  (do (unfav (.indexOf @tweets status))
-                    (.setGraphic favb favi-hover))
-                  (do (fav (.indexOf @tweets status))
-                    (.setGraphic favb favi-on))))))))
+                (future
+                  (if (.isFavorited status)
+                    (do (unfav statusnum)
+                      (.setGraphic favb favi-hover))
+                    (do (fav statusnum)
+                      (.setGraphic favb favi-on)))))))))
       (doto retb
         (.setOnMouseClicked
           (proxy [EventHandler] []
             (handle [_]
               (add-runlater
-                (if (.isRetweeted status)
-                  (do (unret (.indexOf @tweets status))
-                    (.setGraphic retb reti-hover))
-                  (do (ret (.indexOf @tweets status))
-                    (.setGraphic retb reti-on))))))))
+                (future
+                  (if (.isRetweeted status)
+                    (do (unret statusnum)
+                      (.setGraphic retb reti-hover))
+                    (do (ret statusnum)
+                      (.setGraphic retb reti-on)))))))))
+      ;(doto repb
+      ;  (.setMouseClicked
+      ;    (proxy [EventHandler] []
+      ;      (handle [_]
+      ;        (add-runlater
+      ;          (future
+                  
       (doto (. downer getChildren)
         (.add info))
       (doto (. upper getChildren)
@@ -305,6 +322,7 @@
 
 ; print 2 nodes
 (defn print-node!
+  "Print sts to listview."
   [st & sts] 
   (add-runlater
     (let [lbl (doto (Text. (str st (apply str sts)))
@@ -321,7 +339,7 @@
       (str name ".css"))))
 
 (defn autofav!
-  "ふぁぼぉおおおおおおおおおおお"
+  "Add user to autofav list.(crazy)"
   [& user]
   (dosync 
     (ref-set on-status 
@@ -331,6 +349,7 @@
             (.indexOf @tweets status)))))))
 
 (defn get-home
+  "Return home directory."
   []
   (let [home (System/getenv "HOME")]
     (if home
@@ -338,14 +357,28 @@
       (System/getProperty "user.home"))))
 
 (defn search
+  "Search public time line by strs and show to listview."
   [& strs]
   (map gen-node!
     (map add-newstatus!
       (reverse
         (.. twitter (search (Query. (apply str strs))) getTweets)))))
 
+(defn gvim
+  "Edit input field from gvim"
+  []
+  (add-runlater
+    (future
+      (do
+        (sh "gvim" (str (get-home) "/.grimoire/.tmp"))
+        (load-file (str (get-home) "/.grimoire/.tmp"))))))
+
 ; デバック用
-(defn reload []
+(defn reload 
+([]
   (do
-    (load-file "src/grimoire/commands.clj")
-    (load-file "src/grimoire/response.clj")))
+    (load-file (str (get-home) ".grimoire.clj"))
+    (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/commands.clj"))))
+([file]
+  (do
+    (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/" file ".clj")))))

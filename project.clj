@@ -7,7 +7,7 @@
                  [org.twitter4j/twitter4j-core"[3.0,)"]
                  [org.twitter4j/twitter4j-stream"[3.0,)"]
                  [org.twitter4j/twitter4j-async"[3.0,)"]
-                 [local.oracle/javafxrt "2.2.21"]
+                 [local.oracle/javafxrt "2.2.25"]
                  [enlive "1.1.4"]
                  [org.clojure/tools.nrepl "0.2.3"]
                  [clojure-jsr223/clojure-jsr223 "1.0"]]
