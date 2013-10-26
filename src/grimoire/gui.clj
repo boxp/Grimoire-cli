@@ -24,8 +24,6 @@
         [grimoire.listener])
   (:require [clojure.java.io :as io])
   (:gen-class
-   :prefix MainApp-
-   :name MainApp
    :extends javafx.application.Application))
 
 
@@ -38,6 +36,12 @@
         scene (Scene. root 400 600)
         mentions (reverse (.getMentions twitter))]
     (do
+      ; load rcfile
+      (binding [*ns* (find-ns 'grimoire.gui)]
+        (try (load-file 
+               (str (get-home)
+                 "/.grimoire.clj"))
+          (catch Exception e (println e))))
       ; backup scene
       (reset! mainscene scene)
       ; theme setting
@@ -60,7 +64,7 @@
 
 ; javafx start
 ; dirty
-(defn MainApp-start [this ^Stage stage]
+(defn -start [this ^Stage stage]
   (let [signup (-> "signin.fxml" io/resource FXMLLoader/load)]
       (try 
         (do 

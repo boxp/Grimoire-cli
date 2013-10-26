@@ -30,7 +30,7 @@
                    "/.grimoire.clj"))
             (catch Exception e (println e))))
         ; javafx向け
-        (Application/launch MainApp (into-array String []))
+        (Application/launch grimoire.gui (into-array String []))
         (spit 
            (str 
              (get-home) 

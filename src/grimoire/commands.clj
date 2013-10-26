@@ -7,10 +7,9 @@
   (:import (twitter4j TwitterFactory Query)
            (twitter4j.auth AccessToken)
            (twitter4j StatusUpdate)
-           (javafx.scene.input Clipboard ClipboardContent)
+           (javafx.scene.input Clipboard ClipboardContent KeyCode KeyCodeCombination KeyCombination)
            (javafx.application Application Platform)
            (javafx.scene Node Scene)
-           (javafx.scene.input KeyCode)
            (javafx.scene.text Text Font FontWeight)
            (javafx.scene.control Label TextField PasswordField Button Hyperlink ListView)
            (javafx.scene.web WebView)
@@ -383,11 +382,13 @@
   []
   (binding [*ns* (find-ns 'grimoire.core)]
     (future 
-      (do
-        (sh "gvim" 
-          (str (get-home) "/.grimoire/.tmp")))
-        (load-file 
-          (str (get-home) "/.grimoire/.tmp")))))
+      (try
+        (do
+          (sh "gvim" 
+            (str (get-home) "/.grimoire/.tmp")))
+          (load-file 
+            (str (get-home) "/.grimoire/.tmp"))
+        (catch Exeption e (print-node! (.getStackTrace e)))))))
 
 (defn gen-webview
   "Gen webview from url."
@@ -398,6 +399,17 @@
     (doto (Stage.)
       (.setScene (Scene. webview 800 600))
       (.show))))
+
+(defn follow
+  [statusnum]
+  (let [status (@tweets statusnum)]
+    (.createFriendship twitter (.. status getUser getId) true)))
+
+(defmacro gen-keycombi
+  [keycode & modifiers]
+  (concat
+    (list 'KeyCodeCombination. keycode)
+    modifiers))
 
 ; デバック用
 (defn reload 
