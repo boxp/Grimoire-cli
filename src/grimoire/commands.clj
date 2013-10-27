@@ -1,5 +1,6 @@
 (ns grimoire.commands
   (:use [clojure.java.shell]
+        [clojure.string :only [join]]
         [clojure.repl :as repl]
         [grimoire.datas]
         [grimoire.oauth :as oauth])
@@ -373,9 +374,8 @@
   "Search public time line by strs and show to listview."
   [& strs]
   (map gen-node!
-    (map add-newstatus!
-      (reverse
-        (.. twitter (search (Query. (apply str strs))) getTweets)))))
+    (reverse
+      (.. twitter (search (Query. (join " " (apply str strs)))) getTweets))))
 
 (defn gvim
   "Edit input field from gvim"
@@ -388,7 +388,7 @@
             (str (get-home) "/.grimoire/.tmp")))
           (load-file 
             (str (get-home) "/.grimoire/.tmp"))
-        (catch Exeption e (print-node! (.getStackTrace e)))))))
+        (catch Exception e (print-node! (.getStackTrace e)))))))
 
 (defn gen-webview
   "Gen webview from url."

@@ -8,8 +8,7 @@
         [grimoire.datas])
   (:import (javafx.application Application)
            (javafx.embed.swing JFXPanel)
-           (java.io File)
-           MainApp)
+           (java.io File))
   (:gen-class))
 
 

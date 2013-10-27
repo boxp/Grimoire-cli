@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?language Clojure?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.input.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane id="BorderPane" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="400.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
+  <bottom>
+    <HBox fx:id="futter" alignment="TOP_LEFT" prefHeight="30.0" prefWidth="600.0">
+      <children>
+        <TextField fx:id="form" prefWidth="200.0" promptText="How are you doing?" HBox.hgrow="ALWAYS">
+          <HBox.margin>
+            <Insets left="10.0" right="10.0" />
+          </HBox.margin>
+        </TextField>
+        <Button id="button" fx:id="pbtn" mnemonicParsing="false" text="Post" HBox.hgrow="NEVER">
+          <HBox.margin>
+            <Insets right="10.0" fx:id="x1" />
+          </HBox.margin>
+        </Button>
+      </children>
+    </HBox>
+  </bottom>
+  <center>
+    <HBox fx:id="panes" prefHeight="100.0" prefWidth="200.0">
+      <children>
+        <VBox fx:id="maintl" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
+          <children>
+            <HBox id="node" prefHeight="20.0" prefWidth="100.0">
+              <children>
+                <ImageView fx:id="home" fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="false">
+                  <HBox.margin>
+                    <Insets right="5.0" />
+                  </HBox.margin>
+                </ImageView>
+                <Label id="label" prefHeight="20.0" prefWidth="150.0" text="HomeTimeLine">
+                  <font>
+                    <Font size="20.0" />
+                  </font>
+                </Label>
+              </children>
+            </HBox>
+            <ListView fx:id="tllv" blendMode="SRC_ATOP" cache="true" cacheHint="DEFAULT" depthTest="INHERIT" disable="false" focusTraversable="true" mouseTransparent="false" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+          </children>
+        </VBox>
+      </children>
+      <padding>
+        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+      </padding>
+    </HBox>
+  </center>
+  <padding>
+    <Insets />
+  </padding>
+  <top>
+    <MenuBar>
+      <menus>
+        <Menu mnemonicParsing="false" text="File">
+          <items>
+            <MenuItem mnemonicParsing="false" text="Exit..." fx:id="exit" />
+          </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="Edit">
+          <items>
+            <MenuItem mnemonicParsing="false" text="Preference" />
+            <MenuItem mnemonicParsing="false" text="Clojure mode" />
+          </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="Help">
+          <items>
+            <MenuItem mnemonicParsing="false" text="About Grimoire" />
+          </items>
+        </Menu>
+      </menus>
+    </MenuBar>
+  </top>
+  <fx:script><![CDATA[
+    (use '[grimoire.commands]
+         '[grimoire.oauth]
+         '[grimoire.datas]
+         '[grimoire.services]
+         '[grimoire.gui])
+    (import '(javafx.scene.input Clipboard ClipboardContent)
+            '(javafx.application Application Platform)
+            '(javafx.scene Node Scene)
+            '(javafx.scene.web WebView)
+            '(javafx.scene.input KeyCode)
+            '(javafx.scene.text Text Font FontWeight)
+            '(javafx.scene.control Label TextField PasswordField Button Hyperlink ListView)
+            '(javafx.scene.layout GridPane HBox VBox Priority)
+            '(javafx.scene.paint Color)
+            '(javafx.scene.image Image ImageView)
+            '(javafx.geometry Pos Insets)
+            '(javafx.event EventHandler)
+            '(javafx.stage Stage Modality)
+            '(javafx.scene.web WebView)
+            '(javafx.collections FXCollections ObservableList))   
+    (let [spell (doto (Button. "λ") ; Evalation button
+                  (.setId "button")
+                  (.setOnAction (proxy [EventHandler] []
+                                  (handle [_]
+                                    (do
+                                      (.. futter getChildren (remove 1 2))
+                                      (.. futter getChildren (add pbtn))
+                                      (binding [*ns* (find-ns 'grimoire.gui)]
+                                        (print-node! (try 
+                                                        (load-string (.getText form))
+                                                        (catch Exception e (.getMessage e))))))))))]
+      (do
+        (.setOnAction exit 
+          (proxy [EventHandler] []
+            (handle [_]
+              (System/exit 0))))
+        (doto pbtn
+          (.setGraphic 
+            (ImageView. 
+              (Image. "bird_black_16_0.png" (double 14) (double 11) true true)))
+          (.setOnAction 
+            (proxy [EventHandler] []
+              (handle [_]
+                (post (.getText form))))))
+        (.setImage home (Image. "home.png"))
+        (.setOnKeyPressed maintl
+          (proxy [EventHandler] []
+            (handle [ke]
+              (let [idx (.. tllv getFocusModel getFocusedIndex)]
+                (case (.getName (.getCode ke))
+                  "8" (do 
+                        (.. futter getChildren (remove 1 2))
+                        (.. futter getChildren (add spell))
+                        (.requestFocus form))
+                  "9" (do 
+                        (.. futter getChildren (remove 1 2))
+                        (.. futter getChildren (add spell))
+                        (.requestFocus form))
+                  "J" (Platform/runLater
+                        (reify Runnable
+                          (run [this]
+                            (do 
+                              (.. tllv (scrollTo (inc idx)))
+                              (.. tllv getFocusModel (focus (inc idx)))))))
+                  "K" (Platform/runLater
+                        (reify Runnable
+                          (run [this]
+                              (do 
+                                (.. tllv (scrollTo (dec idx)))
+                                (.. tllv getFocusModel (focus (dec idx)))))))
+                  "F" (if (.isControlDown ke)
+                        (add-runlater
+                          (do
+                            (.. tllv (scrollTo (+ 6 idx)))
+                            (.. tllv getFocusModel (focus (+ 6 idx))))))
+                  "U" (if (.isControlDown ke)
+                        (add-runlater
+                          (do
+                            (.. tllv (scrollTo (- idx 6)))
+                            (.. tllv getFocusModel (focus (- idx 6))))))
+                  "G" (if (.isShiftDown ke)
+                        (do
+                          (.. tllv getFocusModel (focus (dec (.size @nodes))))
+                          (.. tllv (scrollTo (dec (.size @nodes)))))
+                        (do 
+                          (.. tllv getFocusModel (focus 0))
+                          (.. tllv (scrollTo 0))))
+                  "default")))))
+          (.setItems tllv @nodes)
+          (reset! pns panes)
+          (reset! listv tllv)
+          (reset! main-tl maintl)))
+  ]]></fx:script>
+</BorderPane>
