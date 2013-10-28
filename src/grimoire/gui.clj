@@ -55,8 +55,8 @@
             ; I couldn't make sence how this code delete. 
             (dosync
               (alter tweets (comp vec concat) mentions))
-            (print (map gen-node! mentions))
-            (map gen-node! mentions))))
+            (doall
+              (map gen-node! mentions)))))
       (doto stage 
         (.setTitle "Grimoire - v0.1.2")
         (.setScene scene)

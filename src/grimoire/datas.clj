@@ -4,6 +4,7 @@
 
 ; twitter
 (def tweets (ref [])) 
+(def tweet-maps (ref {}))
 (def nodes (atom #^javafx.collections.ObservableList (FXCollections/observableArrayList (java.util.ArrayList. []))))
 (def mentions (ref []))
 (def friends (ref #{}))

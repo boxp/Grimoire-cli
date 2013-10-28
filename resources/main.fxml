@@ -69,8 +69,7 @@
         </Menu>
         <Menu mnemonicParsing="false" text="Edit">
           <items>
-            <MenuItem mnemonicParsing="false" text="Preference" />
-            <MenuItem mnemonicParsing="false" text="Clojure mode" />
+            <MenuItem mnemonicParsing="false" text="Evalation form" fx:id="eform" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Help">
@@ -170,6 +169,10 @@
                           (.. tllv getFocusModel (focus 0))
                           (.. tllv (scrollTo 0))))
                   "default")))))
+          (.setOnAction eform 
+            (proxy [EventHandler] []
+              (handle [_]
+                (input-form))))
           (.setItems tllv @nodes)
           (reset! pns panes)
           (reset! listv tllv)
