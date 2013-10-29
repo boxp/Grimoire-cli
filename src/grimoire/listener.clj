@@ -13,7 +13,7 @@
            (javafx.event EventHandler)
            (javafx.scene.paint Color))
   (:use [grimoire.oauth]
-        [grimoire.datas]
+        [grimoire.data]
         [grimoire.commands]))
 
 ; Userstream status listener
@@ -24,7 +24,10 @@
         (dosync
           (alter tweets conj status))
         (gen-node! status)
-        (@on-status status)
+        (try
+          (doall
+            (map #(.on-status % status) @plugins))
+          (catch Exception e nil))
         (if 
           (some #(= (.. twitter getScreenName) %) 
             (map #(.getScreenName %)
@@ -34,6 +37,10 @@
 
     (onDeletionNotice [this statusDeletionNotice]
       (do
+        (try
+          (doall
+            (map #(.on-del % statusDeletionNotice) @plugins))
+          (catch Exception e nil))
         (print-node! 
           "Got a status deletion notice id:" 
           (.. statusDeletionNotice getStatusId)
@@ -69,6 +76,10 @@
 
     (onFavorite [this source target favoritedStatus]
       (do
+        (try
+          (doall
+            (map #(.on-fav % source target favoritedStatus) @plugins))
+          (catch Exception e nil))
         (print-node!
           "You Gotta Fav! source:@" 
           (.getScreenName source) 
@@ -82,6 +93,10 @@
 
     (onUnfavorite [this source target unfavoritedStatus]
       (do
+        (try
+          (doall
+            (map #(.on-unfav % source target unfavoritedStatus) @plugins))
+          (catch Exception e nil))
         (print-node!
           "Catched unFav! source:@" 
           (.getScreenName source) 
@@ -95,6 +110,10 @@
 
     (onFollow [this source followedUser]
       (do
+        (try 
+          (doall
+            (map #(.on-follow % source followedUser) @plugins))
+          (catch Exception e nil))
         (print-node!
           "onFollow source:@" 
           (.getScreenName source) 
@@ -103,10 +122,15 @@
           "\n")))
 
     (onDirectMessage [this directMessage]
-      (print-node! 
-        "onDirectMessage text:" 
-        (.getText directMessage)
-        "\n"))
+      (do
+        (try
+          (doall
+            (map #(.on-follow % directMessage) @plugins))
+          (catch Exception e nil))
+        (print-node! 
+          "onDirectMessage text:" 
+          (.getText directMessage)
+          "\n")))
 
     (onUserListMemberAddition [this addedMember listOwner alist]
       (print-node! 
@@ -210,7 +234,6 @@
       (do
         (dosync
           (alter tweets conj status))
-        (@on-status status)
         (if 
           (some #(= (.. twitter getScreenName) %) (map #(.getText %) (.. status getUserMentionEntities)))
           (print "->"))

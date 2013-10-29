@@ -2,13 +2,15 @@
   (:use [clojure.java.shell]
         [clojure.string :only [join split]]
         [clojure.repl :as repl]
-        [grimoire.datas]
+        [clojure.java.io]
+        [grimoire.plugin]
+        [grimoire.data]
         [grimoire.oauth :as oauth])
   (:require [net.cgrand.enlive-html :as en])
   (:import (twitter4j TwitterFactory Query)
            (twitter4j.auth AccessToken)
            (twitter4j StatusUpdate)
-           (javafx.scene.input Clipboard ClipboardContent KeyCode KeyCodeCombination KeyCombination)
+           (javafx.scene.input Clipboard ClipboardContent KeyCode KeyCodeCombination KeyCombination KeyCombination$Modifier)
            (javafx.application Application Platform)
            (javafx.scene Node Scene)
            (javafx.scene.text Text Font FontWeight)
@@ -25,12 +27,67 @@
            (javafx.fxml FXML FXMLLoader)
            (java.io File)))
 
+(defn get-node
+  "Search and get node with st."
+  [st]
+  (.. @main-stage getScene (lookup st)))
+
+(defn bool-dialog
+  "Generate bool type dialog."
+  [q pos func neg]
+  (let [lblq (doto (Label. q)
+               (.setId "label"))
+        posbtn (doto (Button. pos)
+                 (.setId "button"))
+        negbtn (doto (Button. neg)
+                 (.setId "button"))
+        body (doto (GridPane.)
+               (.setId "maintl")
+               (.add lblq 1 1)
+               (.add posbtn 1 2)
+               (.add negbtn 2 2)
+               (.setHgap 10))
+        scene (doto (Scene. body 480 240)
+                (.. getStylesheets (add (str @theme ".css"))))
+        stage (doto (Stage.)
+                (.setTitle "Grimoire - dialog")
+                (.setScene scene))]
+    (do
+      (.setOnAction posbtn
+        (proxy [EventHandler] []
+          (handle [_]
+            (do
+              (.close stage)))))
+      (GridPane/setMargin posbtn 
+        (Insets. 10 0 10 10))
+      (GridPane/setMargin negbtn 
+        (Insets. 10 10 10 0))
+      (GridPane/setMargin lblq 
+        (Insets. 10 10 0 10))
+      (.show stage)
+      (.setOnAction negbtn
+        (proxy [EventHandler] []
+          (handle [_]
+            (.close stage))))
+      (.setOnAction posbtn
+        (proxy [EventHandler] []
+          (handle [_]
+            (do
+              (load-string func)
+              (.close stage))))))))
+
 (defn selected-status
   "Get selected tweet"
   []
   (@tweet-maps
     (first 
-      (.. @listv getSelectionModel getSelectedItems))))
+      (.. (get-node "#tllv")  getSelectionModel getSelectedItems))))
+
+(defn focused-status
+  "Get focused tweet"
+  []
+  (@tweet-maps
+    (.. (get-node "#tllv") getFocusModel getFocusedItem)))
 
 ;add javafx runlater thread
 (defmacro add-runlater
@@ -314,10 +371,10 @@
           uname (if (.. status isRetweet)
                   (doto (Text. (str (.. status getRetweetedStatus getUser getScreenName) " Retweeted by " (.. status getUser getScreenName)))
                     (.setId "profile")
-                    (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -160)))))
+                    (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -160)))))
                   (doto (Text. (.. status getUser getScreenName))
                     (.setId "profile")
-                    (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -160))))))
+                    (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -160))))))
           info (if (.. status isRetweet)
                  (doto 
                    (Text. 
@@ -356,10 +413,10 @@
           text (if (.. status isRetweet)
                  (doto (Text. (.. status getRetweetedStatus getText))
                    (.setFont (Font. @tweets-size))
-                   (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80)))))
+                   (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -80)))))
                  (doto (Text. (.. status getText))
                    (.setFont (Font. @tweets-size))
-                   (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80))))))
+                   (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -80))))))
           tweet-map {node status}]
       (do
         ; Listeners setting
@@ -411,15 +468,15 @@
           (if (> (.size @nodes) @max-nodes)
             (.remove @nodes @max-nodes (.size @nodes))))))))
 
-  ; print 2 nodes
-  (defn print-node!
-    "Print sts to listview."
-    [st & sts] 
-    (add-runlater
-      (let [lbl (doto (Text. (str st (apply str sts)))
-                  (.. wrappingWidthProperty (bind (.. @listv widthProperty (add -80))))
-                  (.setFont (Font. @tweets-size)))]
-        (.add @nodes 0 lbl))))
+; print 2 nodes
+(defn print-node!
+  "Print sts to listview."
+  [st & sts] 
+  (add-runlater
+    (let [lbl (doto (Text. (str st (apply str sts)))
+                (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -80))))
+                (.setFont (Font. @tweets-size)))]
+      (.add @nodes 0 lbl))))
 
 ; set-theme
 (defn set-theme
@@ -432,12 +489,13 @@
 (defn autofav!
   "Add user to autofav list.(crazy)"
   [& user]
-  (dosync 
-    (ref-set on-status 
-      (fn [status] 
-        (if (some #(= %  (.. status getUser getScreenName)) user) 
-          (fav 
-            (.indexOf @tweets status)))))))
+  (let [plugin (reify Plugin
+                 (on-status [_ status] 
+                   (if (some #(= %  (.. status getUser getScreenName)) user) 
+                    (fav 
+                      (.indexOf @tweets status)))))]
+    (dosync
+      (alter plugins conj plugin))))
 
 (defn get-home
   "Return home directory."
@@ -453,20 +511,30 @@
   (doall
     (map gen-node!
       (reverse
-        (.. twitter (search (Query. (join " " (apply str strs)))) getTweets)))))
+        (.. twitter (search (Query. (apply str (join " " strs)))) getTweets)))))
 
 (defn gvim
   "Edit input field from gvim"
-  []
-  (binding [*ns* (find-ns 'grimoire.gui)]
-    (future 
-      (try
-        (do
-          (sh "gvim" 
-            (str (get-home) "/.grimoire/.tmp")))
-          (load-file 
-            (str (get-home) "/.grimoire/.tmp"))
-        (catch Exception e (print-node! e))))))
+  ([]
+    (binding [*ns* (find-ns 'grimoire.gui)]
+      (future 
+        (try
+          (do
+            (sh "gvim" 
+              (str (get-home) "/.grimoire/.tmp")))
+            (print-node!
+              (load-file 
+                (str (get-home) "/.grimoire/.tmp")))
+          (catch Exception e (print-node! e))))))
+  ([adr]
+    (binding [*ns* (find-ns 'grimoire.gui)]
+      (future 
+        (try
+          (do
+            (sh "gvim" adr))
+            (print-node!
+              (load-file adr))
+          (catch Exception e (print-node! e)))))))
 
 (defn input-form
   "Open evalation form"
@@ -475,7 +543,7 @@
                (.setMaxHeight 2000))
         btn (doto (Button. "Eval")
               (.setId "button")
-              (.setMaxWidth 1000)
+              (.setMaxWidth 2000)
               (.setOnAction
                 (proxy [EventHandler] []
                   (handle [_]
@@ -492,7 +560,8 @@
         scene (doto (Scene. body 300 300)
                 (.. getStylesheets (add (str @theme ".css"))))
         stage (doto (Stage.)
-                (.setScene scene))]
+                (.setScene scene)
+                (.setTitle "Grimoire - Evalation form"))]
     (do
       (VBox/setVgrow txta Priority/ALWAYS)
       (HBox/setHgrow btn Priority/ALWAYS)
@@ -501,7 +570,7 @@
           (handle [ke]
             (cond 
               (and 
-                (= (.. ke getCode getName) "E")
+                (= (. ke getCode) KeyCode/E)
                 (. ke isControlDown))
               (.fire btn)
               (and
@@ -520,7 +589,7 @@
       (.setScene (Scene. webview 800 600))
       (.show))))
 
-(defn open-url
+(defn url
   "Open url with web view"
   ([] 
     (let [status (selected-status)
@@ -535,6 +604,21 @@
       (doall
         (map #(gen-webview %) urls)))))
 
+(defn browse
+  "Open url with browser"
+  ([] 
+    (let [status (selected-status)
+          text (split (.getText status) #" ")
+          urls (filter #(= (seq "http") (take 4 %)) text)]
+      (doall
+        (map #(sh @browser %) urls))))
+  ([statusnum] 
+    (let [status (@tweets statusnum)
+          text (split (.getText status) #" ")
+          urls (filter #(= (seq "http") (take 4 %)) text)]
+      (doall
+        (map #(sh @browser %) urls)))))
+
 (defn follow
   ([]
     (let [status (selected-status)]
@@ -543,11 +627,9 @@
     (let [status (@tweets statusnum)]
       (.createFriendship twitter (.. status getUser getId) true))))
 
-(defmacro gen-keycombi
+(defn gen-keycombi
   [keycode & modifiers]
-  (concat
-    (list 'KeyCodeCombination. keycode)
-    modifiers))
+    (KeyCodeCombination. keycode (into-array KeyCombination$Modifier modifiers)))
 
 ; デバック用
 (defn reload 
@@ -555,7 +637,11 @@
     (do
       (load-file (str (get-home) "/.grimoire.clj"))
       (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/commands.clj"))
-      (use 'grimoire.commands)))
+      (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/plugin.clj"))
+      (.setRoot (.getScene @main-stage)
+        (-> "main.fxml" resource FXMLLoader/load))
+      (use 'grimoire.commands)
+      (use 'grimoire.plugin)))
   ([file]
     (do
       (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/" file ".clj")))))

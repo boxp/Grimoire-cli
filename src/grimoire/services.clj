@@ -1,7 +1,7 @@
 (ns grimoire.services
   (:use [grimoire.oauth :as oauth]
         [grimoire.listener]
-        [grimoire.datas]
+        [grimoire.data]
         [clojure.tools.nrepl.server :only (start-server stop-server)])
   (:import 
     (twitter4j TwitterStreamFactory UserStreamListener)

@@ -5,7 +5,7 @@
         [grimoire.services]
         [grimoire.listener]
         [grimoire.gui]
-        [grimoire.datas])
+        [grimoire.data])
   (:import (javafx.application Application)
            (javafx.embed.swing JFXPanel)
            (java.io File))

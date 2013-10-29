@@ -49,7 +49,7 @@
     (use '[grimoire.commands]
          '[grimoire.oauth]
          '[grimoire.listener]
-         '[grimoire.datas]
+         '[grimoire.data]
          '[grimoire.services]
          '[grimoire.gui])
     (import '(javafx.scene.input Clipboard ClipboardContent)

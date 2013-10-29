@@ -5,31 +5,30 @@
 <?import java.util.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.input.*?>
 <?import javafx.scene.image.*?>
+<?import javafx.scene.input.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
 <BorderPane id="BorderPane" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="400.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
   <bottom>
-    <HBox fx:id="futter" alignment="TOP_LEFT" prefHeight="30.0" prefWidth="600.0">
+    <HBox fx:id="futter" alignment="TOP_LEFT" prefHeight="30.0" prefWidth="600.0" spacing="10.0">
       <children>
         <TextField fx:id="form" prefWidth="200.0" promptText="How are you doing?" HBox.hgrow="ALWAYS">
           <HBox.margin>
-            <Insets left="10.0" right="10.0" />
+            <Insets fx:id="x1" />
           </HBox.margin>
         </TextField>
-        <Button id="button" fx:id="pbtn" mnemonicParsing="false" text="Post" HBox.hgrow="NEVER">
-          <HBox.margin>
-            <Insets right="10.0" fx:id="x1" />
-          </HBox.margin>
-        </Button>
+        <Button id="button" fx:id="pbtn" mnemonicParsing="false" text="Post" HBox.hgrow="NEVER" HBox.margin="$x1" />
       </children>
+      <BorderPane.margin>
+        <Insets left="10.0" right="10.0" />
+      </BorderPane.margin>
     </HBox>
   </bottom>
   <center>
-    <HBox fx:id="panes" prefHeight="100.0" prefWidth="200.0">
+    <HBox fx:id="pane" prefHeight="100.0" prefWidth="200.0">
       <children>
         <VBox fx:id="maintl" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
           <children>
@@ -47,7 +46,18 @@
                 </Label>
               </children>
             </HBox>
-            <ListView fx:id="tllv" blendMode="SRC_ATOP" cache="true" cacheHint="DEFAULT" depthTest="INHERIT" disable="false" focusTraversable="true" mouseTransparent="false" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+            <ListView fx:id="tllv" blendMode="SRC_ATOP" cache="true" cacheHint="DEFAULT" depthTest="INHERIT" disable="false" focusTraversable="true" mouseTransparent="false" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+              <contextMenu>
+                <ContextMenu fx:id="conm">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Reply" fx:id="repmenu" />
+                    <MenuItem mnemonicParsing="false" text="Favorite" fx:id="favmenu" />
+                    <MenuItem mnemonicParsing="false" text="Retweet" fx:id="retmenu" />
+                    <MenuItem mnemonicParsing="false" text="Favrite&amp;Retweet" fx:id="favretmenu" />
+                  </items>
+                </ContextMenu>
+              </contextMenu>
+            </ListView>
           </children>
         </VBox>
       </children>
@@ -57,19 +67,19 @@
     </HBox>
   </center>
   <padding>
-    <Insets />
+    <Insets fx:id="x2" />
   </padding>
   <top>
     <MenuBar>
       <menus>
         <Menu mnemonicParsing="false" text="File">
           <items>
-            <MenuItem mnemonicParsing="false" text="Exit..." fx:id="exit" />
+            <MenuItem mnemonicParsing="false" text="Exit  (Ctrl-Q)" fx:id="exit" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Edit">
           <items>
-            <MenuItem mnemonicParsing="false" text="Evalation form" fx:id="eform" />
+            <MenuItem mnemonicParsing="false" text="Evalation form  (Ctrl-E)" fx:id="eform" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Help">
@@ -83,9 +93,10 @@
   <fx:script><![CDATA[
     (use '[grimoire.commands]
          '[grimoire.oauth]
-         '[grimoire.datas]
+         '[grimoire.data]
          '[grimoire.services]
-         '[grimoire.gui])
+         '[grimoire.gui]
+         '[grimoire.plugin])
     (import '(javafx.scene.input Clipboard ClipboardContent)
             '(javafx.application Application Platform)
             '(javafx.scene Node Scene)
@@ -113,6 +124,18 @@
                                                         (load-string (.getText form))
                                                         (catch Exception e (.getMessage e))))))))))]
       (do
+        (.setOnAction favretmenu
+          (proxy [EventHandler] []
+            (handle [_]
+              (favret))))
+        (.setOnAction favmenu
+          (proxy [EventHandler] []
+            (handle [_]
+              (fav))))
+        (.setOnAction retmenu
+          (proxy [EventHandler] []
+            (handle [_]
+              (ret))))
         (.setOnAction exit 
           (proxy [EventHandler] []
             (handle [_]
@@ -130,7 +153,7 @@
           (proxy [EventHandler] []
             (handle [ke]
               (let [idx (.. tllv getFocusModel getFocusedIndex)]
-                (case (.getName (.getCode ke))
+                (case (.. ke getCode getName)
                   "8" (do 
                         (.. futter getChildren (remove 1 2))
                         (.. futter getChildren (add spell))
@@ -168,14 +191,15 @@
                         (do 
                           (.. tllv getFocusModel (focus 0))
                           (.. tllv (scrollTo 0))))
+                  "E" (if (.isControlDown ke)
+                        (input-form))
+                  "Q" (if (.isControlDown ke)
+                        (System/exit 0))
                   "default")))))
           (.setOnAction eform 
             (proxy [EventHandler] []
               (handle [_]
                 (input-form))))
-          (.setItems tllv @nodes)
-          (reset! pns panes)
-          (reset! listv tllv)
-          (reset! main-tl maintl)))
+          (.setItems tllv @nodes)))
   ]]></fx:script>
 </BorderPane>

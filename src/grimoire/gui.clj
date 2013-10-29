@@ -18,7 +18,8 @@
            (javafx.fxml FXML FXMLLoader))
   (:use [grimoire.oauth :only [twitter get-tokens gen-tokens oauthtoken gen-twitter]]
         [grimoire.services :only [start stop gen-twitterstream]]
-        [grimoire.datas]
+        [grimoire.data]
+        [grimoire.plugin]
         [grimoire.commands]
         [clojure.java.browse]
         [grimoire.listener])
@@ -26,13 +27,14 @@
   (:gen-class
    :extends javafx.application.Application))
 
-
 ; main window
 ; dirty
 (defn mainwin
   [^Stage stage]
   (let [; load fxml layout
-        root (-> "main.fxml" io/resource FXMLLoader/load)
+        root (try
+               (-> "main.fxml" io/resource FXMLLoader/load)
+               (catch Exception e (assert (.getMessage e))))
         scene (Scene. root 400 600)
         mentions (reverse (.getMentions twitter))]
     (do
@@ -46,17 +48,12 @@
       (reset! mainscene scene)
       ; theme setting
       (set-theme @theme)
-      ; set Icon
-      (.. stage getIcons (add (Image. "Grimoire_logo.png" (double 32) (double 32) true true)))
       ; add mentioins tweets
-      (add-runlater
-        (future
-          (do
-            ; I couldn't make sence how this code delete. 
-            (dosync
-              (alter tweets (comp vec concat) mentions))
-            (doall
-              (map gen-node! mentions)))))
+      (dosync
+        (alter tweets (comp vec concat) mentions))
+      (future
+        (doall
+          (map gen-node! mentions)))
       (doto stage 
         (.setTitle "Grimoire - v0.1.2")
         (.setScene scene)
