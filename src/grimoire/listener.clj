@@ -29,7 +29,7 @@
             (= (.. twitter getScreenName) (.. status getInReplyToScreenName)) 
             (do
               (add-runlater
-                (add-nodes! nodes status))
+                (add-nodes! mention-nodes status))
               (add-runlater
                 (add-nodes! nodes status)))
             (add-runlater
