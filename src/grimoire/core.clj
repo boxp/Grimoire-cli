@@ -48,7 +48,7 @@
         (catch Exception e 
           (do
             (println "Please get Pin code")
-            (println (.getAuthorizationURL oauthtoken))
+            (println (.getAuthorizationURL @oauthtoken))
             (print "PIN:")
             (flush)
             (gen-tokens (read-line))

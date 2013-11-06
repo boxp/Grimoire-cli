@@ -3,20 +3,20 @@
         [clojure.string :only [join split]]
         [clojure.repl :as repl]
         [clojure.java.io]
-        [grimoire.plugin]
         [grimoire.data]
         [grimoire.oauth :as oauth])
   (:require [net.cgrand.enlive-html :as en])
-  (:import (twitter4j TwitterFactory Query)
+  (:import (twitter4j TwitterFactory Query Status User UserMentionEntity)
            (twitter4j.auth AccessToken)
            (twitter4j StatusUpdate)
            (javafx.scene.input Clipboard ClipboardContent KeyCode KeyCodeCombination KeyCombination KeyCombination$Modifier)
            (javafx.application Application Platform)
            (javafx.scene Node Scene)
            (javafx.scene.text Text Font FontWeight)
-           (javafx.scene.control Label TextField TextArea PasswordField Button Hyperlink ListView)
+           (javafx.scene.control Label TextField TextArea PasswordField Button Hyperlink ListView MenuItem)
            (javafx.scene.web WebView)
            (java.lang Runnable)
+           (java.util Date)
            (javafx.scene.layout GridPane HBox VBox Priority)
            (javafx.scene.paint Color)
            (javafx.scene.image Image ImageView)
@@ -28,13 +28,18 @@
            (java.io File)))
 
 (defn get-node
-  "Search and get node with st."
+  "scene から css id でノードを検索して返す"
   [st]
-  (.. @main-stage getScene (lookup st)))
+  (.. @mainscene (lookup st)))
+
+(defn get-master-pane
+  "一番初めに作られたpane(panesの一番目の要素)を返します"
+  []
+  (.. (get-node "#pane") getChildren (get 0)))
 
 (defn bool-dialog
-  "Generate bool type dialog."
-  [q pos func neg]
+  "OKボタン，Cancelボタン，質問からなる確認ダイアログを作成，表示します．引数q:質問,引数pos:OKボタンに設定するテキスト,引数f:OKボタンを押した時に実行される関数,引数neg:Cancelボタンのテキスト"
+  [q pos f neg]
   (let [lblq (doto (Label. q)
                (.setId "label"))
         posbtn (doto (Button. pos)
@@ -73,25 +78,26 @@
         (proxy [EventHandler] []
           (handle [_]
             (do
-              (load-string func)
+              (f)
               (.close stage))))))))
 
 (defn selected-status
-  "Get selected tweet"
-  []
-  (@tweet-maps
-    (first 
-      (.. (get-node "#tllv")  getSelectionModel getSelectedItems))))
+  "選択されているツイートのStatusを取得"
+  ([]
+    (@tweet-maps (.. (.getFocusOwner (.getScene @main-stage))  getSelectionModel getSelectedItems)))
+  ([lv]
+    (@tweet-maps (.. lv  getSelectionModel getSelectedItems))))
 
 (defn focused-status
-  "Get focused tweet"
-  []
-  (@tweet-maps
-    (.. (get-node "#tllv") getFocusModel getFocusedItem)))
+  "フォーカス中のツイートのStatusを取得"
+  ([]
+    (@tweet-maps (.. (.getFocusOwner (.getScene @main-stage)) getFocusModel getFocusedItem)))
+  ([lv]
+    (@tweet-maps (.. lv getFocusModel getFocusedItem))))
 
 ;add javafx runlater thread
 (defmacro add-runlater
-  "Add parameter to Platform/runlater"
+  "引数を非同期で実行(JavaFxのPlatform/runlaterに登録)"
   [body]
   `(Platform/runLater
      (reify Runnable
@@ -101,7 +107,7 @@
 ; コマンドたち
 ; ツイート
 (defn post 
-  " Post tweets \nUsage: (post \"hoge\")"
+  "引数の文字列を全て一つにまとめてツイートする．140文字以上の時は省略されます．"
   [& input]
   (try 
     (future
@@ -129,28 +135,27 @@
 ; コマンド一覧
 (defn help []
   (str     "*** Grimoire-cli Commands List***\n\n"
-           "post: Post tweets\n"
-           "showtl: Showing 20 new Tweets from HomeTimeline.\n"
-           "start: start userstream.\n"
-           "stop: stop userstream.\n"
-           "fav: Favorite status.\n"
-           "retweet: Retweet status.\n"
-           "favret: Retweet and Favorite status.\n"
-           "reply: reply to tweet\n"
-           "del: Delete tweet\n"
-           "autofav!: Favoring\n"
-           "follow: follow user by statusnum.\n"
-           "open-url: Open webview from statusnum.\n"
-           "print-node!: print 2 node\n"
+           "post: ツイート(例：(post \"test\"))\n"
+           "start: ユーザーストリームをスタートさせる.\n"
+           "stop: ユーザーストリームをストップさせる.\n"
+           "fav: ふぁぼる(例：(fav 2))\n"
+           "retweet: リツイートする(例：(ret 3))\n"
+           "favret: ふぁぼってリツイートする(例：(favret 6))\n"
+           "reply: リプライを送る(例：(reply 1 \"hoge\"))\n"
+           "del: ツイートを削除(例：(del 168))\n"
+           "autofav!: 指定したユーザーのツイートを自動でふぁぼる(例：(autofav! \"@If_I_were_boxp\"))\n"
+           "follow: ツイートのユーザーをフォローする(例：(follow 58))\n"
+           "open-url: ツイートのURLをブラウズする（例：(open-url: 19)\n"
+           "print-node!: テキストをタイムラインに表示します（例：(print-node! \"Too late.\"))\n"
            "Get more information to (doc <commands>)."))
 
 ; リツイート
 (defn ret
-  "Retweet Timeline's status number."
+  "statusnum(ツイートの右下に表示)を指定してリツイート"
   ([]
     (future
       (try 
-        (let [status (selected-status)]
+        (let [status (focused-status (.. @main-stage getScene getFocusOwner))]
           (str 
             "Success retweet: @" 
             (.. status getUser getScreenName)
@@ -170,11 +175,11 @@
 
 ; リツイートの取り消し
 (defn unret
-  "UnRetweet Timeline's status number."
+  "statusnum(ツイートの右下に表示)を指定してリツイートを取り消し"
   ([]
     (future
       (try 
-        (let [status (.destroyStatus twitter (.getId (selected-status)))]
+        (let [status (.destroyStatus twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
           (str 
             "Success unretweet: @" 
             (.. status getUser getScreenName)
@@ -194,11 +199,11 @@
 
 ; ふぁぼふぁぼ
 (defn fav
-  "Favorite Timeline's status number."
+  "statusnum(ツイートの右下に表示)を指定してふぁぼ"
   ([]
     (future
       (try
-        (let [status (.createFavorite twitter (.getId (selected-status)))]
+        (let [status (.createFavorite twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
           (str
             "Success Fav: @" 
             (.. status getUser getScreenName)
@@ -218,11 +223,11 @@
 
 ; あんふぁぼ
 (defn unfav
-  "Favorite Timeline's status number."
+  "statusnum(ツイートの右下に表示)を指定してあんふぁぼ"
   ([]
     (future
       (try
-        (let [status (.destroyFavorite twitter (.getId (selected-status)))]
+        (let [status (.destroyFavorite twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
           (str
             "Success UnFav: @" 
             (.. status getUser getScreenName)
@@ -243,7 +248,7 @@
 ; ふぁぼRT
 ; clean
 (defn favret 
-  "Favorite and Retweet Timeline's status number"
+  "statusnum(ツイートの右下に表示)を指定してふぁぼ＆リツイート"
   ([]
     (do 
       (fav)
@@ -256,7 +261,7 @@
 ; ふぁぼRT
 ; clean
 (defn unfavret 
-  "UnFavorite and UnRetweet Timeline's status number"
+  "statusnum(ツイートの右下に表示)を指定してふぁぼ＆リツイートを取り消す"
   ([]
     (do 
       (unfav)
@@ -268,29 +273,33 @@
 
 ; つい消し
 (defn del
-  "Delete Timeline's status number."
+  "statusnum(ツイートの右下に表示)を指定してツイートを取り消す"
   ([]
     (try 
-      (let [status (.destroyStatus twitter (.getId (selected-status)))]
-        (str 
-          "Success delete: @" 
-          (.. status getUser getScreenName)
-          " - "
-          (.. status getText)))
+      (let [status (focused-status (.. @main-stage getScene getFocusOwner))]
+        (do
+          (.destroyStatus twitter (.getId status))
+          (str 
+            "Success delete: @" 
+            (.. status getUser getScreenName)
+            " - "
+            (.. status getText))))
       (catch Exception e "something has wrong.")))
   ([statusnum]
     (try 
-      (let [status (.destroyStatus twitter (.getId (selected-status)))]
-        (str 
-          "Success delete: @" 
-          (.. status getUser getScreenName)
-          " - "
-          (.. status getText)))
+      (let [status (@tweets statusnum)]
+        (do
+          (.destroyStatus twitter (.getId status))
+          (str 
+            "Success delete: @" 
+            (.. status getUser getScreenName)
+            " - "
+            (.. status getText))))
       (catch Exception e "something has wrong."))))
 
 ; リプライ
 (defn reply [statusnum & texts]
-  "Reply to tweets"
+  "statusnum(ツイートの右下に表示)とテキストを指定して,返信する"
   (let [reply (str \@ (.. (@tweets statusnum) getUser getScreenName) " " (apply str texts))]
     (future
       (do
@@ -307,36 +316,9 @@
                     (str \@ (.. (@tweets statusnum) getUser getScreenName) " " (apply str texts))))
                 (.inReplyToStatusId (.getId (@tweets statusnum)))))))))))
 
-; gen-newstatus
-(defn gen-newstatus [status]
-  "Gen newstauts data type(halted)"
-  (let [newstatus {:user (.. status getUser getScreenName)
-                   :text (.. status getText)
-                   :time (.. status getCreatedAt)
-                   :source (.. status getSource)
-                   :inreply (.. status getInReplyToStatusId)
-                   :isretweet? (.. status isRetweet)
-                   :retweeted (.. status getRetweetCount)
-                   :favorited? (.. status isFavorited)
-                   :id (.. status getId)
-                   :count (count @tweets)
-                   :mentions (map #(.getScreenName %) (.. status getUserMentionEntities))
-                   :url (map #(.getText %) (.. status getURLEntities))
-                   :image (.. status getUser getBiggerProfileImageURL)}]
-      newstatus))
-
-; dirty
-(defn add-newstatus! 
-  "Add status to tweets."
-  [status]
-  (do
-    (dosync
-      (alter tweets conj status))
-    status))
-
 ; get-source from html
 (defn get-source
-  "Get \"via name\" from Status/source."
+  "twitter4j.Status.getSourceのhtmlをテキストに変換"
   [source]
   (first 
     (:content 
@@ -349,145 +331,145 @@
                     (java.io.StringReader.  source))))))))))
 
 
+
 ; gen-node
-(defn gen-node! 
-  "Generate node and add to listview."
-  [status]
-  (future 
-    (let [statusnum (.indexOf @tweets status)
-          node (doto (proxy [HBox] []
-                       (getStatusNum [] ~statusnum)) 
-                     (.setSpacing 10)
-                     (.setPrefWidth 350))
-          source (if (.. status isRetweet)
+(defn gen-node!
+  "twitter4j.Statusから画面に表示するnodeを作成し，返す"
+  [#^Status status]
+  #^HBox
+  (let [statusnum ^int (.indexOf @tweets status)
+        node (doto (HBox.) 
+             (.setSpacing 10)
+             (.setPrefWidth 350))
+        source (cond ^boolean (. status isRetweet)
+                 (do
                    (get-source (.. status getRetweetedStatus getSource))
                    (get-source (.. status getSource)))
-          image (if (.. status isRetweet)
-                  (Image. (.. status getRetweetedStatus getUser getBiggerProfileImageURL) (double 73) (double 73) true true)
-                  (Image. (.. status getUser getBiggerProfileImageURL) (double 73) (double 73) true true))
-          imageview (doto (ImageView. image)
-                      (.setFitHeight (double 48))
-                      (.setFitWidth (double 48)))
-          uname (if (.. status isRetweet)
-                  (doto (Text. (str (.. status getRetweetedStatus getUser getScreenName) " Retweeted by " (.. status getUser getScreenName)))
-                    (.setId "profile")
-                    (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -160)))))
-                  (doto (Text. (.. status getUser getScreenName))
-                    (.setId "profile")
-                    (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -160))))))
-          info (if (.. status isRetweet)
-                 (doto 
-                   (Text. 
-                     (str (.. status getRetweetedStatus getCreatedAt) " " source " " statusnum))
-                   (.setFont (Font. 10)))
-                 (doto 
-                   (Text. 
-                     (str (.. status getCreatedAt) " " source " " statusnum))
-                   (.setFont (Font. 10))))
-          vbox (VBox.)
-          downer (doto (HBox.)
-                 (.setSpacing 5))
-          upper (doto (HBox.))
-          favi-hover (ImageView. (Image. "favorite_hover.png" (double 16) (double 16) true true))
-          favi-on (ImageView. (Image. "favorite_on.png" (double 16) (double 16) true true))
-          favb (doto (Button.) 
-                 (.setGraphic
-                   (if (.isFavorited status) 
-                     favi-on
-                     favi-hover)))
-          reti-hover (ImageView. (Image. "retweet_hover.png" (double 16) (double 16) true true))
-          reti-on (ImageView. (Image. "retweet_on.png" (double 16) (double 16) true true))
-          repi (ImageView. (Image. "reply_hover.png" (double 16) (double 16) true true))
-          retb (doto (Button.) 
-                 (.setGraphic
-                   (if (.isRetweeted status) 
-                     reti-on
-                     reti-hover)))
-          favretb (doto (Button.) 
-                 (.setGraphic
-                   (if (.isFavorited status) 
-                     reti-on
-                     reti-hover)))
-          repb (doto (Button.)
-                 (.setGraphic repi))
-          text (if (.. status isRetweet)
-                 (doto (Text. (.. status getRetweetedStatus getText))
-                   (.setFont (Font. @tweets-size))
-                   (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -80)))))
-                 (doto (Text. (.. status getText))
-                   (.setFont (Font. @tweets-size))
-                   (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -80))))))
-          tweet-map {node status}]
-      (do
-        ; Listeners setting
-        (doto favb
-          (.setOnMouseClicked
-            (proxy [EventHandler] []
-              (handle [_]
-                (add-runlater
-                  (if (.isFavorited status)
-                    (do (unfav statusnum)
-                      (.setGraphic favb favi-hover))
-                    (do (fav statusnum)
-                      (.setGraphic favb favi-on))))))))
-        (doto retb
-          (.setOnMouseClicked
-            (proxy [EventHandler] []
-              (handle [_]
-                (add-runlater
-                  (if (.isRetweeted status)
-                    (do (unret statusnum)
-                      (.setGraphic retb reti-hover))
-                    (do (ret statusnum)
-                      (.setGraphic retb reti-on))))))))
-        (doto (. downer getChildren)
-          (.add info))
-        (doto (. upper getChildren)
-          (.add uname)
-          (.add favb)
-          (.add retb))
-        (doto (. vbox getChildren) 
-          (.add upper)
-          (.add text)
-          (.add downer))
-        (doto (. node getChildren) 
-          (.add imageview)
-          (.add vbox)) 
-        (HBox/setHgrow text Priority/SOMETIMES)
-        (HBox/setHgrow vbox Priority/SOMETIMES)
-        (HBox/setHgrow node Priority/SOMETIMES)
-        (dosync
-          (alter tweet-maps merge tweet-map))
-        ; メンションツイートか否か
-        (if 
-          (some #(= (.. twitter getScreenName) %) (map #(.getText %) (.. status getUserMentionEntities)))
-          (.. node (setId "mentions")))
-        ; Nodeをtweetsへ追加
-        (add-runlater (.add @nodes 0 node))
-        (add-runlater
-          (if (> (.size @nodes) @max-nodes)
-            (.remove @nodes @max-nodes (.size @nodes))))))))
-
-; print 2 nodes
-(defn print-node!
-  "Print sts to listview."
-  [st & sts] 
-  (add-runlater
-    (let [lbl (doto (Text. (str st (apply str sts)))
-                (.. wrappingWidthProperty (bind (.. (get-node "#tllv") widthProperty (add -80))))
-                (.setFont (Font. @tweets-size)))]
-      (.add @nodes 0 lbl))))
+                 (= (.. status getUser getScreenName) "Grimoire")
+                 (.. status getSource))
+        url (.. status getUser getBiggerProfileImageURL)
+        image (if (. status isRetweet)
+                (let [returl (.. status getRetweetedStatus getUser getBiggerProfileImageURL)]
+                  (or 
+                    (@imagemap returl)
+                    (do
+                      (dosync
+                        (alter imagemap merge 
+                          {returl (Image. returl true)}))
+                      (@imagemap returl))))
+                (or 
+                  (@imagemap url)
+                  (do
+                    (dosync
+                      (alter imagemap merge 
+                        {url (Image. url true)}))
+                    (@imagemap url))))
+        imageview (doto (ImageView. image)
+                    (.setFitHeight (double 48))
+                    (.setFitWidth (double 48)))
+        uname (if (.. status isRetweet)
+                (doto (Text. (str (.. status getRetweetedStatus getUser getScreenName) " Retweeted by " (.. status getUser getScreenName)))
+                  (.setId "profile")
+                  (.. wrappingWidthProperty (bind (.. (get-master-pane) widthProperty (add -160)))))
+                (doto (Text. (.. status getUser getScreenName))
+                  (.setId "profile")
+                  (.. wrappingWidthProperty (bind (.. (get-master-pane) widthProperty (add -160))))))
+        info (if (.. status isRetweet)
+               (doto 
+                 (Text. 
+                   (str (.. status getRetweetedStatus getCreatedAt) " " source " " statusnum))
+                 (.setFont (Font. 10)))
+               (doto 
+                 (Text. 
+                   (str (.. status getCreatedAt) " " source " " statusnum))
+                 (.setFont (Font. 10))))
+        vbox (VBox.)
+        downer (doto (HBox.)
+               (.setSpacing 5))
+        upper (doto (HBox.))
+        favi-hover (ImageView. (Image. "favorite_hover.png" (double 16) (double 16) true true))
+        favi-on (ImageView. (Image. "favorite_on.png" (double 16) (double 16) true true))
+        favb (doto (Button.) 
+               (.setGraphic
+                 (if (.isFavorited status) 
+                   favi-on
+                   favi-hover)))
+        reti-hover (ImageView. (Image. "retweet_hover.png" (double 16) (double 16) true true))
+        reti-on (ImageView. (Image. "retweet_on.png" (double 16) (double 16) true true))
+        repi (ImageView. (Image. "reply_hover.png" (double 16) (double 16) true true))
+        retb (doto (Button.) 
+               (.setGraphic
+                 (if (.isRetweeted status) 
+                   reti-on
+                   reti-hover)))
+        favretb (doto (Button.) 
+               (.setGraphic
+                 (if (.isFavorited status) 
+                   reti-on
+                   reti-hover)))
+        repb (doto (Button.)
+               (.setGraphic repi))
+        text (if (.. status isRetweet)
+               (doto (Text. (.. status getRetweetedStatus getText))
+                 (.setFont (Font. @tweets-size))
+                 (.. wrappingWidthProperty (bind (.. (get-master-pane) widthProperty (add -80)))))
+               (doto (Text. (.. status getText))
+                 (.setFont (Font. @tweets-size))
+                 (.. wrappingWidthProperty (bind (.. (get-master-pane) widthProperty (add -80))))))]
+    (do
+      ; Listeners setting
+      (doto favb
+        (.setOnMouseClicked
+          (proxy [EventHandler] []
+            (handle [_]
+              (add-runlater
+                (if (.isFavorited status)
+                  (do (unfav statusnum)
+                    (.setGraphic favb favi-hover))
+                  (do (fav statusnum)
+                    (.setGraphic favb favi-on))))))))
+      (doto retb
+        (.setOnMouseClicked
+          (proxy [EventHandler] []
+            (handle [_]
+              (add-runlater
+                (if (.isRetweeted status)
+                  (do (unret statusnum)
+                    (.setGraphic retb reti-hover))
+                  (do (ret statusnum)
+                    (.setGraphic retb reti-on))))))))
+      (doto (. downer getChildren)
+        (.add info))
+      (doto (. upper getChildren)
+        (.add uname)
+        (.add favb)
+        (.add retb))
+      (doto (. vbox getChildren) 
+        (.add upper)
+        (.add text)
+        (.add downer))
+      (doto (. node getChildren) 
+        (.add imageview)
+        (.add vbox)) 
+      (HBox/setHgrow text Priority/SOMETIMES)
+      (HBox/setHgrow vbox Priority/SOMETIMES)
+      (HBox/setHgrow node Priority/SOMETIMES)
+      ; メンションツイートか否か
+      (if 
+        (some #(= myname %) (map #(.getText %) (.. status getUserMentionEntities)))
+        (.. node (setId "mentions")))
+      node)))
 
 ; set-theme
 (defn set-theme
-  "set theme. (Testing.)"
+  "Grimoire全体のテーマを設定します(solarized_darkなど)"
   [name]
-  (.. @mainscene getStylesheets 
+  (.. (.getScene @main-stage) getStylesheets 
     (add 
       (str name ".css"))))
 
 (defn autofav!
-  "Add user to autofav list.(crazy)"
+  "引数のユーザーを自動でふぁぼる(マジキチ向け)"
   [& user]
   (let [plugin (reify Plugin
                  (on-status [_ status] 
@@ -498,7 +480,7 @@
       (alter plugins conj plugin))))
 
 (defn get-home
-  "Return home directory."
+  "ホームディレクトリを取得"
   []
   (let [home (System/getenv "HOME")]
     (if home
@@ -506,15 +488,154 @@
       (System/getProperty "user.home"))))
 
 (defn search
-  "Search public time line by strs and show to listview."
+  "引数の文字列からツイートを検索し，twitter4j.Statusで返す．"
   [& strs]
-  (doall
-    (map gen-node!
-      (reverse
-        (.. twitter (search (Query. (apply str (join " " strs)))) getTweets)))))
+    (reverse
+      (.. twitter (search (Query. (apply str (join " " strs)))) getTweets)))
+
+(defn gen-webview
+  "引数のURLをWebViewでブラウズ"
+  [url]
+  (let [webview (WebView.)
+        engine (doto (. webview getEngine)
+                 (.load url))]
+    (doto (Stage.)
+      (.setScene (Scene. webview 800 600))
+      (.setTitle (.getLocation engine))
+      (.show))))
+
+(defn url
+  "statusnum(ツイートの右下に表示)を指定して，ツイートの中のURLをWebViewでブラウズ"
+  ([] 
+    (let [status (focused-status (.. @main-stage getScene getFocusOwner))
+          text (split (.getText status) #" ")
+          urls (filter #(= (seq "http") (take 4 %)) text)]
+      (doall
+        (map #(gen-webview %) urls))))
+  ([statusnum] 
+    (let [status (@tweets statusnum)
+          text (split (.getText status) #" ")
+          urls (filter #(= (seq "http") (take 4 %)) text)]
+      (doall
+        (map #(gen-webview %) urls)))))
+ 
+
+(defn browse
+  "statusnum(ツイートの右下に表示)を指定して，ツイートの中のURLをbrowserに指定したブラウザでブラウズ"
+  ([] 
+    (let [status (focused-status (.. @main-stage getScene getFocusOwner))
+          text (split (.getText status) #" ")
+          urls (filter #(= (seq "http") (take 4 %)) text)]
+      (doall
+        (map #(sh @browser %) urls))))
+  ([statusnum] 
+    (let [status (@tweets statusnum)
+          text (split (.getText status) #" ")
+          urls (filter #(= (seq "http") (take 4 %)) text)]
+      (doall
+        (map #(sh @browser %) urls)))))
+
+(defn follow
+  "statusnum(ツイートの右下に表示)を指定して，指定したツイートのユーザーをフォローする"
+  ([]
+    (let [status (focused-status (.. @main-stage getScene getFocusOwner))]
+      (if (.isRetweet status)
+        (.createFriendship twitter (.. status getRetweetedStatus getUser getId) true)
+        (.createFriendship twitter (.. status getUser getId) true))))
+  ([statusnum]
+    (let [status (@tweets statusnum)]
+      (if (.isRetweet status)
+        (.createFriendship twitter (.. status getRetweetedStatus getUser getId) true)
+        (.createFriendship twitter (.. status getUser getId) true)))))
+
+
+(defn get-selected-urls
+  "フォーカスしているツイートに含まれるURLのリストを返す．"
+  []
+  (let [text (split (.. (focused-status (.. @main-stage getScene getFocusOwner)) getText) #" ")
+        urls (filter #(= (seq "http") (take 4 %)) text)]
+    urls))
+
+(defn add-nodes!
+  "statusからnodeを生成してcoll(observablearraylist)に追加します"
+  [coll status]
+  (let [item (gen-node! status)]
+    (do
+      (add-runlater
+        (.add coll 0 item))
+      (dosync
+        (alter tweet-maps merge {item status}))
+      (add-runlater
+        (if (>= (.size coll) @max-nodes) 
+          (.remove coll (dec @max-nodes) (.size coll)))))))
+
+; print 2 nodes
+(defn gen-notice
+  "文字列からtwitter4j.Statusを生成して返す"
+  [st & sts] 
+  (let [grimoire (proxy [User] []
+                   (getScreenName []
+                     "Grimoire")
+                   (getMiniProfileImageURL []
+                     "alice.png")
+                   (getBiggerProfileImageURL []
+                     "alice.png"))
+        status (proxy [Status] []
+                 (isRetweet []
+                   false)
+                 (isRetweeted []
+                   false)
+                 (isFavorited []
+                   false)
+                 (getUser []
+                   grimoire)
+                 (getSource [] 
+                   "Grimoire(clojure)")
+                 (getCreatedAt []
+                   (Date.))
+                 (getId [] 0)
+                 (getText []
+                   (apply str (conj sts st)))
+                 (getUserMentionEntities [] (into-array UserMentionEntity [])))]
+    status))
+
+; print 2 nodes
+(defn print-node!
+  "引数のテキストをタイムラインに表示する"
+  [st & sts] 
+  (let [grimoire (proxy [User] []
+                   (getScreenName []
+                     "Grimoire")
+                   (getBiggerProfileImageURL []
+                     "alice.png"))
+        status (proxy [Status] []
+                 (isRetweet []
+                   false)
+                 (isRetweeted []
+                   false)
+                 (isFavorited []
+                   false)
+                 (getUser []
+                   grimoire)
+                 (getSource [] 
+                   "Grimoire(clojure)")
+                 (getCreatedAt []
+                   (Date.))
+                 (getId [] 0)
+                 (getText []
+                   (apply str (conj sts st)))
+                 (getUserMentionEntities [] (into-array UserMentionEntity [])))
+        node (gen-node! status)]
+    (do
+      (add-runlater
+        (.add nodes 0 node))
+      (add-runlater
+        (if (>= (.size nodes) @max-nodes) 
+          (.remove nodes (dec @max-nodes) (.size nodes))))
+       node)))
 
 (defn gvim
-  "Edit input field from gvim"
+  "gvimを立ち上げ，保存した文字列をEvalします．(引数を指定するとファイル名を指定)"
   ([]
     (binding [*ns* (find-ns 'grimoire.gui)]
       (future 
@@ -537,7 +658,7 @@
           (catch Exception e (print-node! e)))))))
 
 (defn input-form
-  "Open evalation form"
+  "Evalation formを開く"
   []
   (let [txta (doto (TextArea.)
                (.setMaxHeight 2000))
@@ -579,68 +700,19 @@
               (.fire btn)))))
       (. stage show))))
     
-(defn gen-webview
-  "Gen webview from url."
-  [url]
-  (let [webview (WebView.)
-        engine (doto (. webview getEngine)
-                 (.load url))]
-    (doto (Stage.)
-      (.setScene (Scene. webview 800 600))
-      (.show))))
-
-(defn url
-  "Open url with web view"
-  ([] 
-    (let [status (selected-status)
-          text (split (.getText status) #" ")
-          urls (filter #(= (seq "http") (take 4 %)) text)]
-      (doall
-        (map #(gen-webview %) urls))))
-  ([statusnum] 
-    (let [status (@tweets statusnum)
-          text (split (.getText status) #" ")
-          urls (filter #(= (seq "http") (take 4 %)) text)]
-      (doall
-        (map #(gen-webview %) urls)))))
-
-(defn browse
-  "Open url with browser"
-  ([] 
-    (let [status (selected-status)
-          text (split (.getText status) #" ")
-          urls (filter #(= (seq "http") (take 4 %)) text)]
-      (doall
-        (map #(sh @browser %) urls))))
-  ([statusnum] 
-    (let [status (@tweets statusnum)
-          text (split (.getText status) #" ")
-          urls (filter #(= (seq "http") (take 4 %)) text)]
-      (doall
-        (map #(sh @browser %) urls)))))
-
-(defn follow
-  ([]
-    (let [status (selected-status)]
-      (.createFriendship twitter (.. status getUser getId) true)))
-  ([statusnum]
-    (let [status (@tweets statusnum)]
-      (.createFriendship twitter (.. status getUser getId) true))))
-
-(defn gen-keycombi
-  [keycode & modifiers]
-    (KeyCodeCombination. keycode (into-array KeyCombination$Modifier modifiers)))
-
 ; デバック用
 (defn reload 
   ([]
+    "プロジェクトのソースコードをリロードします．(デバック用)"
     (do
       (load-file (str (get-home) "/.grimoire.clj"))
       (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/commands.clj"))
       (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/plugin.clj"))
+      (load-file (str (get-home) "/Dropbox/program/clojure/grimoire-cli/src/grimoire/gui.clj"))
       (.setRoot (.getScene @main-stage)
         (-> "main.fxml" resource FXMLLoader/load))
       (use 'grimoire.commands)
+      (use 'grimoire.gui)
       (use 'grimoire.plugin)))
   ([file]
     (do

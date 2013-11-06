@@ -67,23 +67,23 @@
             '(javafx.stage Stage Modality)
             '(javafx.scene.web WebView)
             '(javafx.collections FXCollections ObservableList))   
-    (let [authurl (.getAuthorizationURL oauthtoken)
-          cb (Clipboard/getSystemClipboard)
-          cbc (doto (ClipboardContent.)
-                (.putString authurl))]
-      (do 
-        (doto signup
-          (.setOnAction (proxy [EventHandler] []
-                                (handle [_]
-                                  (do 
-                                    (gen-tokens (.getText pinfd))
-                                    (gen-twitter)
-                                    (gen-twitterstream listener)
-                                    (start)
-                                    (mainwin @main-stage))))))
-        (doto urlbtn
-         (.setOnAction (proxy [EventHandler] []
-                               (handle [_]
+    (do 
+      (doto signup
+        (.setOnAction (proxy [EventHandler] []
+                              (handle [_]
+                                (do 
+                                  (gen-tokens (.getText pinfd))
+                                  (gen-twitter)
+                                  (gen-twitterstream listener)
+                                  (start)
+                                  (mainwin @main-stage))))))
+      (doto urlbtn
+       (.setOnAction (proxy [EventHandler] []
+                             (handle [_]
+                               (let [authurl (.getAuthorizationURL @oauthtoken)
+                                     cb (Clipboard/getSystemClipboard)
+                                     cbc (doto (ClipboardContent.)
+                                           (.putString authurl))]
                                  (do
                                    (.setContent cb cbc)
                                    (.setText copyed "コピーしました"))))))))

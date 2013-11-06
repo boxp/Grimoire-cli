@@ -1,14 +1,30 @@
-(ns grimoire.plugin)
+(ns grimoire.plugin
+  (:import (java.io File))
+  (:use [grimoire.commands]
+        [grimoire.data]))
 
-(defprotocol Plugin
-  "Grimoire plugin protocol, but you don't have to override all methods." 
-  (on-status [this status])
-  (on-rt [this status])
-  (on-unrt [this status])
-  (on-fav [this source target status])
-  (on-unfav [this source target status])
-  (on-del [this status])
-  (on-follow [this source user])
-  (on-dm [this dm])
-  (on-start [this])
-  (on-click [this]))
+(defn add-plugin!
+  "Pluginプロトコルを継承したオブジェクトをプラグインに登録します"
+  [item]
+  (dosync
+    (alter plugins conj item)))
+
+(defn load-plugin
+  "pluginをロードします"
+  []
+  (let [loaded  (filter #(= (seq ".clj") (seq (take-last 4 %)))
+                  (.list
+                    (File. 
+                      (str (get-home) "/.grimoire/plugin"))))]
+    (do
+      (dosync
+        (alter plugins empty))
+      (binding [*ns* (find-ns 'grimoire.plugin)]
+        (doall
+          (map #(add-plugin! 
+                 (load-file 
+                   (str (get-home) "/.grimoire/plugin/" %)))
+            loaded))))))
+
+; load plugin
+(load-plugin)

@@ -1,5 +1,5 @@
 (ns grimoire.oauth
-  (:use [clojure.java.browse])
+  (:use [grimoire.data])
   (:import (twitter4j Status Twitter TwitterFactory TwitterException)
            (twitter4j.auth AccessToken OAuthAuthorization)
            (twitter4j.conf ConfigurationContext)
@@ -9,11 +9,13 @@
 (def consumers {:consumerKey "Blnxqqx44rdGTZsBYI4bKw" :consumerSecret "bmQIczed6gbdqkN0V8tV11Carwy2PLj7l2bOIAdcoE"})
 (def consumerKey (:consumerKey consumers))
 (def consumerSecret (:consumerSecret consumers))
-(def oauthtoken
+(defn get-oauthtoken!
+  []
   (let [conf (ConfigurationContext/getInstance) 
         auth (doto (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
-    (.. auth getOAuthRequestToken)))
+    (reset! oauthtoken
+      (.. auth getOAuthRequestToken))))
 
 (defn gen-tokens [pin] 
   (let [conf (ConfigurationContext/getInstance) 
@@ -23,7 +25,7 @@
          (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
          (let 
            [twitterTokens 
-             (.getOAuthAccessToken auth oauthtoken pin)]
+             (.getOAuthAccessToken auth @oauthtoken pin)]
            (do
              (reset! tokens 
                {:token (.getToken twitterTokens) 
@@ -35,8 +37,10 @@
                (str @tokens)))))))
 
 (defn get-tokens []
-    (reset! tokens 
-      (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj"))))
+    (try
+      (reset! tokens 
+        (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj")))
+      (catch Exception e nil)))
 
 (defn gen-twitter []
   (try 

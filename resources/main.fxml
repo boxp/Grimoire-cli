@@ -11,7 +11,7 @@
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane id="BorderPane" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="400.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
+<BorderPane id="BorderPane" fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1200.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
   <bottom>
     <HBox fx:id="futter" alignment="TOP_LEFT" prefHeight="30.0" prefWidth="600.0" spacing="10.0">
       <children>
@@ -96,14 +96,17 @@
          '[grimoire.data]
          '[grimoire.services]
          '[grimoire.gui]
-         '[grimoire.plugin])
+         '[grimoire.plugin]
+         '[clojure.java.browse]
+         '[clojure.string :only [split]])
     (import '(javafx.scene.input Clipboard ClipboardContent)
             '(javafx.application Application Platform)
             '(javafx.scene Node Scene)
             '(javafx.scene.web WebView)
             '(javafx.scene.input KeyCode)
             '(javafx.scene.text Text Font FontWeight)
-            '(javafx.scene.control Label TextField PasswordField Button Hyperlink ListView)
+            '(javafx.scene.control Label TextField PasswordField Button Hyperlink ListView MenuItem ListCell ListView)
+            '(javafx.util Callback)
             '(javafx.scene.layout GridPane HBox VBox Priority)
             '(javafx.scene.paint Color)
             '(javafx.scene.image Image ImageView)
@@ -112,30 +115,61 @@
             '(javafx.stage Stage Modality)
             '(javafx.scene.web WebView)
             '(javafx.collections FXCollections ObservableList))   
-    (let [spell (doto (Button. "Î»") ; Evalation button
-                  (.setId "button")
-                  (.setOnAction (proxy [EventHandler] []
-                                  (handle [_]
-                                    (do
-                                      (.. futter getChildren (remove 1 2))
-                                      (.. futter getChildren (add pbtn))
-                                      (binding [*ns* (find-ns 'grimoire.gui)]
-                                        (print-node! (try 
-                                                        (load-string (.getText form))
-                                                        (catch Exception e (.getMessage e))))))))))]
+    (let [;cf (reify Callback 
+          ;     (call [this _]
+          ;       (proxy [ListCell] []
+          ;         (updateItem [status emp?]
+          ;           (proxy-super updateItem status emp?)
+          ;           (future
+          ;             (add-runlater
+          ;               (if (not emp?)
+          ;                 (.setGraphic this
+          ;                   (gen-node! status)))))))))
+          spell (doto (Button. "Î»") ; Evalation button
+                    (.setId "button")
+                    (.setOnAction (proxy [EventHandler] []
+                                    (handle [_]
+                                      (do
+                                        (.. futter getChildren (remove 1 2))
+                                        (.. futter getChildren (add pbtn))
+                                        (binding [*ns* (find-ns 'grimoire.gui)]
+                                          (print-node! (try 
+                                                          (load-string (.getText form))
+                                                          (catch Exception e (.getMessage e))))))))))]
       (do
         (.setOnAction favretmenu
           (proxy [EventHandler] []
             (handle [_]
-              (favret))))
+              (if @nervous
+                (bool-dialog 
+                  (str "Are you sure want to Favorite & Retweet?\n"
+                       (. (focused-status) getText))
+                       "Sure"
+                       #(favret)
+                       "Cancel")
+                (favret)))))
         (.setOnAction favmenu
           (proxy [EventHandler] []
             (handle [_]
+              (if @nervous
+                (bool-dialog 
+                  (str "Are you sure want to Favorite?\n"
+                       (. (focused-status) getText))
+                       "Sure"
+                       #(fav)
+                       "Cancel"))
               (fav))))
         (.setOnAction retmenu
           (proxy [EventHandler] []
             (handle [_]
-              (ret))))
+              (if @nervous
+                (bool-dialog 
+                  (str "Are you sure want to Favorite?\n"
+                       (. (focused-status) getText))
+                       "Sure"
+                       #(ret)
+                       "Cancel")
+                (ret)))))
         (.setOnAction exit 
           (proxy [EventHandler] []
             (handle [_]
@@ -147,59 +181,106 @@
           (.setOnAction 
             (proxy [EventHandler] []
               (handle [_]
-                (post (.getText form))))))
+                (do
+                  (post (.getText form))
+                  (.clear form))))))
         (.setImage home (Image. "home.png"))
+        (dosync
+          (alter key-maps merge 
+            {["8" false true]
+             (fn [_]
+               (add-runlater
+                 (do 
+                   (.requestFocus form)
+                   (.. futter getChildren (remove 1 2))
+                   (.. futter getChildren (add spell)))))
+             ["9" false true]
+             (fn [_]
+               (add-runlater
+                 (do 
+                   (.requestFocus form)
+                   (.. futter getChildren (remove 1 2))
+                   (.. futter getChildren (add spell)))))
+             ["J" false false]
+             #(add-runlater
+                (do 
+                  (.. % (scrollTo (inc (.. % getFocusModel getFocusedIndex))))
+                  (.. % getFocusModel (focus (inc (.. % getFocusModel getFocusedIndex))))))
+             ["K" false false]
+             #(add-runlater
+               (do 
+                 (.. % (scrollTo (dec (.. % getFocusModel getFocusedIndex))))
+                 (.. % getFocusModel (focus (dec (.. % getFocusModel getFocusedIndex))))))
+             ["F" true false]
+             #(add-runlater
+               (do
+                 (.. % (scrollTo (+ 6 (.. % getFocusModel getFocusedIndex))))
+                 (.. % getFocusModel (focus (+ 6 (.. % getFocusModel getFocusedIndex))))))
+             ["U" true false]
+             #(add-runlater
+               (do
+                 (.. % (scrollTo (- (.. % getFocusModel getFocusedIndex) 6)))
+                 (.. % getFocusModel (focus (- (.. % getFocusModel getFocusedIndex) 6)))))
+             ["G" false true]
+             #(add-runlater
+               (do
+                 (.. % getFocusModel (focus (dec (.size nodes))))
+                 (.. % (scrollTo (dec (.size nodes))))))
+             ["G" false false]
+             #(add-runlater
+               (do 
+                 (.. % getFocusModel (focus 0))
+                 (.. % (scrollTo 0))))
+             ["E" true false]
+             (fn [_] (input-form))
+             ["F" true true]
+             (fn [_] (fav))
+             ["R" true true]
+             (fn [_] (ret))
+             ["Q" true false]
+             (fn [_] (System/exit 0))
+             ["F11" false false]
+             (fn [_] (.setFullScreen @main-stage true))}))
         (.setOnKeyPressed maintl
           (proxy [EventHandler] []
             (handle [ke]
-              (let [idx (.. tllv getFocusModel getFocusedIndex)]
-                (case (.. ke getCode getName)
-                  "8" (do 
-                        (.. futter getChildren (remove 1 2))
-                        (.. futter getChildren (add spell))
-                        (.requestFocus form))
-                  "9" (do 
-                        (.. futter getChildren (remove 1 2))
-                        (.. futter getChildren (add spell))
-                        (.requestFocus form))
-                  "J" (Platform/runLater
-                        (reify Runnable
-                          (run [this]
-                            (do 
-                              (.. tllv (scrollTo (inc idx)))
-                              (.. tllv getFocusModel (focus (inc idx)))))))
-                  "K" (Platform/runLater
-                        (reify Runnable
-                          (run [this]
-                              (do 
-                                (.. tllv (scrollTo (dec idx)))
-                                (.. tllv getFocusModel (focus (dec idx)))))))
-                  "F" (if (.isControlDown ke)
+              (add-runlater
+                (try
+                  ((@key-maps [(.. ke getCode getName) (.isControlDown ke) (.isShiftDown ke)]) tllv)
+                  (catch Exception e (println (.getMessage e))))))))
+        (try
+          (.setOnContextMenuRequested tllv
+                  (proxy [EventHandler] [] 
+                    (handle [e] 
+                      (let [urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status tllv) getText) #"\s|\n|¡¡"))
+                            mis (map 
+                                  #(doto (MenuItem. %)
+                                    (.setOnAction
+                                      (proxy [EventHandler] []
+                                        (handle [_]
+                                          (gen-webview %)))))
+                                  urls)
+                            plgs (map 
+                                   #(if (. % get-name)
+                                     (doto (MenuItem. (. % get-name))
+                                       (.setOnAction
+                                         (proxy [EventHandler] []
+                                           (handle [e]
+                                             (.on-click % e))))))
+                                   @plugins)]
                         (add-runlater
                           (do
-                            (.. tllv (scrollTo (+ 6 idx)))
-                            (.. tllv getFocusModel (focus (+ 6 idx))))))
-                  "U" (if (.isControlDown ke)
-                        (add-runlater
-                          (do
-                            (.. tllv (scrollTo (- idx 6)))
-                            (.. tllv getFocusModel (focus (- idx 6))))))
-                  "G" (if (.isShiftDown ke)
-                        (do
-                          (.. tllv getFocusModel (focus (dec (.size @nodes))))
-                          (.. tllv (scrollTo (dec (.size @nodes)))))
-                        (do 
-                          (.. tllv getFocusModel (focus 0))
-                          (.. tllv (scrollTo 0))))
-                  "E" (if (.isControlDown ke)
-                        (input-form))
-                  "Q" (if (.isControlDown ke)
-                        (System/exit 0))
-                  "default")))))
-          (.setOnAction eform 
-            (proxy [EventHandler] []
-              (handle [_]
-                (input-form))))
-          (.setItems tllv @nodes)))
+                            (.. conm getItems (remove 4 (.. conm getItems size)))
+                            (doall
+                              (map #(.. conm getItems (add %)) 
+                                (concat mis plgs)))))))))
+          (catch Exception e (println (.getMessage e))))
+
+        (.setOnAction eform 
+          (proxy [EventHandler] []
+            (handle [_]
+              (input-form))))
+        (.setItems tllv nodes)))
+        ;(.setCellFactory tllv cf)))
   ]]></fx:script>
 </BorderPane>
