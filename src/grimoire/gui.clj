@@ -39,6 +39,8 @@
         lbl (doto (Label. (. user getScreenName))
               (.setFont (Font. 20))
               (.setId "label"))
+        desc (doto (Label. (. user getDescription))
+               (.setId "label"))
         hl (doto (Hyperlink. (. user getURL))
              (.setOnAction 
                (proxy [EventHandler] []
@@ -49,6 +51,7 @@
                (.setSpacing 20)
                (.. getChildren (add image))
                (.. getChildren (add lbl))
+               (.. getChildren (add desc))
                (.. getChildren (add hl)))
         status (reverse (.getUserTimeline twitter (. user getId)))
         ol (FXCollections/observableArrayList (to-array []))
@@ -56,19 +59,23 @@
             (.setMaxWidth Double/MAX_VALUE)
             (.setMaxHeight Double/MAX_VALUE))
         usertweets (doto (Tab. "Tweets")
-                 (.setContent lv))
+                 (.setContent lv)
+                 (.setClosable false))
         tabpane (doto (TabPane.)
                   (.. getTabs (add usertweets)))
         root (doto (VBox.)
                (.. getChildren (add vbox))
                (.. getChildren (add tabpane)))
-        scene (Scene. root 400 600)
+        scene (doto (Scene. root 400 600)
+                (.. getStylesheets (add (str @theme ".css"))))
         stage (doto (Stage.)
+                (.setTitle (str "Grimoire - @" (. user getScreenName)))
                 (.setScene scene))]
       (do
         (VBox/setVgrow lv Priority/ALWAYS)
         (HBox/setHgrow lv Priority/ALWAYS)
         (VBox/setVgrow root Priority/ALWAYS)
+        (VBox/setMargin image (Insets. 20 0 0 0))
         (add-runlater
           (do
             (dosync
