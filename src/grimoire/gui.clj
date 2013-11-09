@@ -23,14 +23,15 @@
         [grimoire.data]
         [grimoire.plugin]
         [grimoire.commands]
+        [grimoire.wrapper]
         [grimoire.listener]
         [clojure.string :only [split]])
   (:require [clojure.java.io :as io])
   (:gen-class
    :extends javafx.application.Application))
 
-(defn gen-profile
-  "Generate profile window, user: twitter4j.User instance"
+(defn show-profile!
+  "プロファイルウインドウを生成し，表示します．user:twitter4j.Userインスタンス"
   [user]
   (let [image (doto (ImageView. (. user getBiggerProfileImageURL))
                 (.setFitHeight 78)
@@ -49,13 +50,15 @@
                (.. getChildren (add image))
                (.. getChildren (add lbl))
                (.. getChildren (add hl)))
-        ol (FXCollections/observableArrayList
-             (.getUserTimeline twitter (. user getId)))
-        lv (ListView. ol)
-        tweets (doto (Tab. "Tweets")
+        status (reverse (.getUserTimeline twitter (. user getId)))
+        ol (FXCollections/observableArrayList (to-array []))
+        lv (doto (ListView. ol)
+            (.setMaxWidth Double/MAX_VALUE)
+            (.setMaxHeight Double/MAX_VALUE))
+        usertweets (doto (Tab. "Tweets")
                  (.setContent lv))
         tabpane (doto (TabPane.)
-                  (.. getChildren (add tweets)))
+                  (.. getTabs (add usertweets)))
         root (doto (VBox.)
                (.. getChildren (add vbox))
                (.. getChildren (add tabpane)))
@@ -65,7 +68,13 @@
       (do
         (VBox/setVgrow lv Priority/ALWAYS)
         (HBox/setHgrow lv Priority/ALWAYS)
-        stage)))
+        (VBox/setVgrow root Priority/ALWAYS)
+        (add-runlater
+          (do
+            (dosync
+              (alter tweets (comp vec concat) status))
+            (doall (map #(add-nodes! ol %) status))))
+        (. stage show))))
 
 (defn gen-pane
   "Generate Pane, image: label's image url, lbl: Pane title, coll: listview's collection"
@@ -153,8 +162,16 @@
       (.setOnContextMenuRequested listv
                   (proxy [EventHandler] [] 
                     (handle [e] 
-                      (let [urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status listv) getText) #"\s|\n|　"))
-                            mis (map 
+                      (let [users (cons (. (focused-status) getUser) (. (focused-status) getUserMentionEntities))
+                            useritms (map 
+                                      #(doto (MenuItem. (str "@" (. % getScreenName)))
+                                        (.setOnAction
+                                          (proxy [EventHandler] []
+                                            (handle [_]
+                                              (show-profile! %)))))
+                                      users)
+                            urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status listv) getText) #"\s|\n|　"))
+                            urlitms (map 
                                   #(doto (MenuItem. %)
                                     (.setOnAction
                                       (proxy [EventHandler] []
@@ -174,7 +191,7 @@
                             (.. conm getItems (remove 4 (.. conm getItems size)))
                             (doall
                               (map #(.. conm getItems (add %))
-                                (concat mis plgs)))))))))
+                                (concat useritms urlitms plgs)))))))))
       (.setOnKeyPressed root
         (proxy [EventHandler] []
           (handle [ke]
@@ -193,6 +210,8 @@
         scene (Scene. root 800 600)
         mentions (reverse (.getMentions twitter))]
     (do
+      ; check update
+      (check-update)
       ; load rcfile
       (future
         (binding [*ns* (find-ns 'grimoire.gui)]

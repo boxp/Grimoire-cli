@@ -4,7 +4,8 @@
         [clojure.repl :as repl]
         [clojure.java.io]
         [grimoire.data]
-        [grimoire.oauth :as oauth])
+        [grimoire.oauth]
+        [grimoire.wrapper])
   (:require [net.cgrand.enlive-html :as en])
   (:import (twitter4j TwitterFactory Query Status User UserMentionEntity)
            (twitter4j.auth AccessToken)
@@ -41,6 +42,7 @@
   "OKボタン，Cancelボタン，質問からなる確認ダイアログを作成，表示します．引数q:質問,引数pos:OKボタンに設定するテキスト,引数f:OKボタンを押した時に実行される関数,引数neg:Cancelボタンのテキスト"
   [q pos f neg]
   (let [lblq (doto (Label. q)
+               (.setFont (Font. 20))
                (.setId "label"))
         posbtn (doto (Button. pos)
                  (.setId "button"))
@@ -52,7 +54,7 @@
                (.add posbtn 1 2)
                (.add negbtn 2 2)
                (.setHgap 10))
-        scene (doto (Scene. body 480 240)
+        scene (doto (Scene. body)
                 (.. getStylesheets (add (str @theme ".css"))))
         stage (doto (Stage.)
                 (.setTitle "Grimoire - dialog")
@@ -81,6 +83,50 @@
               (f)
               (.close stage))))))))
 
+(defn form-dialog
+  "入力ダイアログの作成，表示，title:タイトル,q:メッセージ,pos:肯定ボタンのテキスト,f:肯定ボタンを押された時に呼ばれる関数,neg:否定ボタンのテキスト"
+  [title q pos f neg]
+  (let [lblq (doto (Label. q)
+               (.setFont (Font. 20))
+               (.setId "label"))
+        posbtn (doto (Button. pos)
+                 (.setId "button"))
+        negbtn (doto (Button. neg)
+                 (.setId "button"))
+        body (doto (GridPane.)
+               (.setId "maintl")
+               (.add lblq 1 1)
+               (.add posbtn 1 2)
+               (.add negbtn 2 2)
+               (.setHgap 10))
+        scene (doto (Scene. body)
+                (.. getStylesheets (add (str @theme ".css"))))
+        stage (doto (Stage.)
+                (.setTitle "Grimoire - dialog")
+                (.setScene scene))]
+    (do
+      (.setOnAction posbtn
+        (proxy [EventHandler] []
+          (handle [_]
+            (do
+              (.close stage)))))
+      (GridPane/setMargin posbtn 
+        (Insets. 10 0 10 10))
+      (GridPane/setMargin negbtn 
+        (Insets. 10 10 10 0))
+      (GridPane/setMargin lblq 
+        (Insets. 10 10 0 10))
+      (.show stage)
+      (.setOnAction negbtn
+        (proxy [EventHandler] []
+          (handle [_]
+            (.close stage))))
+      (.setOnAction posbtn
+        (proxy [EventHandler] []
+          (handle [_]
+            (do
+              (f)
+              (.close stage))))))))
 (defn selected-status
   "選択されているツイートのStatusを取得"
   ([]
@@ -115,8 +161,8 @@
         (.getText 
           (.updateStatus twitter 
             (if 
-              (> (count (seq (apply str input))) 140)
-                (str (apply str (take 137 (seq (apply str input)))) "...")
+              (> (count (apply str input)) 140)
+                (apply str (take 137 (apply str input)) "...")
                 (apply str input))))))
     (catch Exception e (println "Something has wrong." e))))
 
@@ -699,6 +745,21 @@
                 (. ke isControlDown))
               (.fire btn)))))
       (. stage show))))
+
+(defn check-update
+  "Grimoireのアップデートをチェック"
+  []
+  (future
+    (let [cache (slurp "http://archbox.dip.jp/works/grimoire/Grimoire.jar")
+          local (slurp (System/getProperty "java.class.path"))]
+       (if (= cache local)
+         (print-node! "Grimoireは最新です")
+         (do
+           (bool-dialog "最新版のGrimoireが公開されています，Updateしますか？" "はい"
+             #(spit (System/getProperty "java.class.path") cache)
+             "お断りします")
+           (print-node! "最新版にアップデートしました."))))))
+  
     
 ; デバック用
 (defn reload 

@@ -22,7 +22,13 @@
         auth (doto (OAuthAuthorization. conf) 
                 (.setOAuthConsumer consumerKey,consumerSecret))]
        (do  
-         (.mkdir (File. (str (System/getenv "HOME") "/.grimoire")))
+         (.mkdir (File. 
+                   (str 
+                     (let [home (System/getenv "HOME")]
+                       (if home
+                         home
+                         (System/getProperty "user.home"))) 
+                     "/.grimoire")))
          (let 
            [twitterTokens 
              (.getOAuthAccessToken auth @oauthtoken pin)]
@@ -32,14 +38,23 @@
                 :tokenSecret (.getTokenSecret twitterTokens)})
              (spit 
                (str 
-                 (System/getenv "HOME") 
+                 (let [home (System/getenv "HOME")]
+                   (if home
+                     home
+                     (System/getProperty "user.home"))) 
                  "/.grimoire/tokens.clj") 
                (str @tokens)))))))
 
 (defn get-tokens []
     (try
       (reset! tokens 
-        (load-file (str (System/getenv "HOME") "/.grimoire/tokens.clj")))
+        (load-file 
+          (str 
+            (let [home (System/getenv "HOME")]
+              (if home
+                home
+                (System/getProperty "user.home"))) 
+            "/.grimoire/tokens.clj")))
       (catch Exception e nil)))
 
 (defn gen-twitter []

@@ -135,7 +135,7 @@
                                         (binding [*ns* (find-ns 'grimoire.gui)]
                                           (print-node! (try 
                                                           (load-string (.getText form))
-                                                          (catch Exception e (.getMessage e))))))))))]
+                                                          (catch Exception e e)))))))))]
       (do
         (.setOnAction favretmenu
           (proxy [EventHandler] []
@@ -252,13 +252,21 @@
           (.setOnContextMenuRequested tllv
                   (proxy [EventHandler] [] 
                     (handle [e] 
-                      (let [urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status tllv) getText) #"\s|\n|¡¡"))
-                            mis (map 
-                                  #(doto (MenuItem. %)
-                                    (.setOnAction
-                                      (proxy [EventHandler] []
-                                        (handle [_]
-                                          (gen-webview %)))))
+                      (let [users (cons (. (focused-status) getUser) (. (focused-status) getUserMentionEntities))
+                            useritms (map 
+                                      #(doto (MenuItem. (str "@" (. % getScreenName)))
+                                        (.setOnAction
+                                          (proxy [EventHandler] []
+                                            (handle [_]
+                                              (show-profile! %)))))
+                                      users)
+                            urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status tllv) getText) #"\s|\n|¡¡"))
+                            urlitms (map 
+                                      #(doto (MenuItem. %)
+                                        (.setOnAction
+                                          (proxy [EventHandler] []
+                                            (handle [_]
+                                              (gen-webview %)))))
                                   urls)
                             plgs (map 
                                    #(if (. % get-name)
@@ -273,7 +281,7 @@
                             (.. conm getItems (remove 4 (.. conm getItems size)))
                             (doall
                               (map #(.. conm getItems (add %)) 
-                                (concat mis plgs)))))))))
+                                (concat useritms urlitms plgs)))))))))
           (catch Exception e (println (.getMessage e))))
 
         (.setOnAction eform 

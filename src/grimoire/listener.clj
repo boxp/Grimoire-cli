@@ -48,7 +48,7 @@
         (loop [coll nodes]
           (if (or (= (.. statusDeletionNotice getStatusId)
                    (.getId (@tweet-maps (first coll))))
-                (nil? (@tweet-maps (first coll))))
+                (nil? (first coll)))
             (add-runlater
               (.remove nodes (first coll)))
             (recur (rest coll))))))

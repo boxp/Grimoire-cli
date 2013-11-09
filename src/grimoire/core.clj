@@ -2,6 +2,7 @@
   (:use [clojure.repl]
         [grimoire.oauth :as oauth]
         [grimoire.commands]
+        [grimoire.wrapper]
         [grimoire.services]
         [grimoire.listener]
         [grimoire.gui]
