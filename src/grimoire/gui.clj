@@ -37,10 +37,8 @@
                 (.setFitHeight 78)
                 (.setFitWidth 78))
         lbl (doto (Label. (. user getScreenName))
-              (.setFont (Font. 20))
-              (.setId "label"))
-        desc (doto (Label. (. user getDescription))
-               (.setId "label"))
+              (.setFont (Font. 20)))
+        desc (Label. (. user getDescription))
         hl (doto (Hyperlink. (. user getURL))
              (.setOnAction 
                (proxy [EventHandler] []
@@ -66,8 +64,7 @@
         root (doto (VBox.)
                (.. getChildren (add vbox))
                (.. getChildren (add tabpane)))
-        scene (doto (Scene. root 400 600)
-                (.. getStylesheets (add (str @theme ".css"))))
+        scene (Scene. root 400 600)
         stage (doto (Stage.)
                 (.setTitle (str "Grimoire - @" (. user getScreenName)))
                 (.setScene scene))]

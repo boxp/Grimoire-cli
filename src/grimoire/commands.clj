@@ -388,11 +388,11 @@
              (.setSpacing 10)
              (.setPrefWidth 350))
         source (cond ^boolean (. status isRetweet)
-                 (do
-                   (get-source (.. status getRetweetedStatus getSource))
-                   (get-source (.. status getSource)))
+                 (get-source (.. status getRetweetedStatus getSource))
                  (= (.. status getUser getScreenName) "Grimoire")
-                 (.. status getSource))
+                 (.. status getSource)
+                 :else
+                 (get-source (.. status getSource)))
         url (.. status getUser getBiggerProfileImageURL)
         image (if (. status isRetweet)
                 (let [returl (.. status getRetweetedStatus getUser getBiggerProfileImageURL)]
