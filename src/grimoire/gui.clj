@@ -51,7 +51,7 @@
                (.. getChildren (add lbl))
                (.. getChildren (add desc))
                (.. getChildren (add hl)))
-        status (reverse (.getUserTimeline twitter (. user getId)))
+        status (reverse (.getUserTimeline @twitter (. user getId)))
         ol (FXCollections/observableArrayList (to-array []))
         lv (doto (ListView. ol)
             (.setMaxWidth Double/MAX_VALUE)
@@ -166,7 +166,7 @@
       (.setOnContextMenuRequested listv
                   (proxy [EventHandler] [] 
                     (handle [e] 
-                      (let [users (cons (. (focused-status) getUser) (. (focused-status) getUserMentionEntities))
+                      (let [users (cons (. (focused-status) getUser) (vec (. (focused-status) getUserMentionEntities)))
                             useritms (map 
                                       #(doto (MenuItem. (str "@" (. % getScreenName)))
                                         (.setOnAction
@@ -192,10 +192,14 @@
                                    @plugins)]
                         (add-runlater
                           (do
-                            (.. conm getItems (remove 4 (.. conm getItems size)))
-                            (doall
-                              (map #(.. conm getItems (add %))
-                                (concat useritms urlitms plgs)))))))))
+                            (try
+                              (.. conm getItems (remove 4 (.. conm getItems size)))
+                              (catch Exception e nil))
+                            (try
+                              (doall
+                                (map #(.. conm getItems (add %))
+                                  (concat useritms urlitms plgs)))
+                              (catch Exception e nil))))))))
       (.setOnKeyPressed root
         (proxy [EventHandler] []
           (handle [ke]
@@ -212,7 +216,7 @@
   (let [; load fxml layout
         root (-> "main.fxml" io/resource FXMLLoader/load)
         scene (Scene. root 800 600)
-        mentions (reverse (.getMentions twitter))]
+        mentions (reverse (.getMentions @twitter))]
     (do
       ; check update
       (check-update)
@@ -224,13 +228,15 @@
                    "/.grimoire.clj"))
             (catch Exception e (println e)))))
       ; set name
-      (reset! myname (. twitter getScreenName))
+      (reset! myname (. @twitter getScreenName))
       ; backup scene
       (reset! mainscene scene)
       ; Add mentions pane
       (add-runlater
         (.. scene (lookup "#pane") getChildren (add 
           (gen-pane "reply_hover.png" "Mentions" mention-nodes))))
+      ; set main acount image
+      (refresh-profileimg!)
       ; add mentioins tweets
       (dosync
         (alter tweets (comp vec concat) mentions))

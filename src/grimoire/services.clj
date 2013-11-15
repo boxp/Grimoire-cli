@@ -13,10 +13,10 @@
 (defn gen-twitterstream
   [listener]
   (let [confbuilder (doto (ConfigurationBuilder.)
-    (.setOAuthConsumerKey (:consumerKey consumers))
-    (.setOAuthConsumerSecret (:consumerSecret consumers))
-    (.setOAuthAccessToken (:token @tokens))
-    (.setOAuthAccessTokenSecret (:tokenSecret @tokens)))
+          (.setOAuthConsumerKey (:consumerKey consumers))
+          (.setOAuthConsumerSecret (:consumerSecret consumers))
+          (.setOAuthAccessToken (:token @tokens))
+          (.setOAuthAccessTokenSecret (:tokenSecret @tokens)))
         conf (.build confbuilder)]
     (reset! twitterstream 
         (doto (.getInstance (TwitterStreamFactory. conf))

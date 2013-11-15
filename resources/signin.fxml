@@ -23,7 +23,7 @@
         <Font size="15.0" fx:id="x1" />
       </font>
     </Label>
-    <Button id="" fx:id="urlbtn" font="$x1" layoutX="60.0" layoutY="175.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="175.0" text="Copy sign up URL.">
+    <Button id="" fx:id="urlbtn" font="$x1" layoutX="60.0" layoutY="175.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="175.0" text="Open sign up URL.">
       <effect>
         <Reflection />
       </effect>
@@ -80,14 +80,9 @@
       (doto urlbtn
        (.setOnAction (proxy [EventHandler] []
                              (handle [_]
-                               (let [authurl (.getAuthorizationURL @oauthtoken)
-                                     cb (Clipboard/getSystemClipboard)
-                                     cbc (doto (ClipboardContent.)
-                                           (.putString authurl))]
+                               (let [authurl (.getAuthorizationURL @oauthtoken)]
                                  (do
-                                   (.setContent cb cbc)
-                                   (.setText copyed "コピーしました"))))))))
-        
-    
+                                   (gen-webview authurl)
+                                   (.setText copyed "認証画面を開きました"))))))))
   ]]></fx:script>
 </AnchorPane>

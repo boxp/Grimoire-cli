@@ -156,21 +156,20 @@
   "引数の文字列を全て一つにまとめてツイートする．140文字以上の時は省略されます．"
   [& input]
   (try 
-    (future
-      (str "Success:" 
-        (.getText 
-          (.updateStatus twitter 
-            (if 
-              (> (count (apply str input)) 140)
-                (apply str (take 137 (apply str input)) "...")
-                (apply str input))))))
-    (catch Exception e (println "Something has wrong." e))))
+    (str "Success:" 
+      (.getText 
+        (.updateStatus @twitter 
+          (if 
+            (> (count (apply str input)) 140)
+              (apply str (take 137 (apply str input)) "...")
+              (apply str input)))))
+    (catch Exception e (str "Something has wrong." (.getMessage e)))))
 
 ; 20件のツイート取得
 (defn showtl 
   " Showing 20 new tweets from HomeTimeline.\nUsage: (showtl)"
   []
-  (let [statusAll (reverse (.getHomeTimeline twitter))]
+  (let [statusAll (reverse (.getHomeTimeline @twitter))]
     (loop [status statusAll i 1]
       (if (= i 20)
         nil
@@ -211,7 +210,7 @@
   ([statusnum]
     (future
       (try 
-        (let [status (.retweetStatus twitter (.getId (@tweets statusnum)))]
+        (let [status (.retweetStatus @twitter (.getId (@tweets statusnum)))]
           (str 
             "Success retweet: @" 
             (.. status getUser getScreenName)
@@ -225,7 +224,7 @@
   ([]
     (future
       (try 
-        (let [status (.destroyStatus twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
+        (let [status (.destroyStatus @twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
           (str 
             "Success unretweet: @" 
             (.. status getUser getScreenName)
@@ -235,7 +234,7 @@
   ([statusnum]
     (future
       (try 
-        (let [status (.destroyStatus twitter (.getId (@tweets statusnum)))]
+        (let [status (.destroyStatus @twitter (.getId (@tweets statusnum)))]
           (str 
             "Success unretweet: @" 
             (.. status getUser getScreenName)
@@ -249,7 +248,7 @@
   ([]
     (future
       (try
-        (let [status (.createFavorite twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
+        (let [status (.createFavorite @twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
           (str
             "Success Fav: @" 
             (.. status getUser getScreenName)
@@ -259,7 +258,7 @@
   ([statusnum]
     (future
       (try
-        (let [status (.createFavorite twitter (.getId (@tweets statusnum)))]
+        (let [status (.createFavorite @twitter (.getId (@tweets statusnum)))]
           (str
             "Success Fav: @" 
             (.. status getUser getScreenName)
@@ -273,7 +272,7 @@
   ([]
     (future
       (try
-        (let [status (.destroyFavorite twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
+        (let [status (.destroyFavorite @twitter (.getId (focused-status (.. @main-stage getScene getFocusOwner))))]
           (str
             "Success UnFav: @" 
             (.. status getUser getScreenName)
@@ -283,7 +282,7 @@
   ([statusnum]
     (future
       (try
-        (let [status (.destroyFavorite twitter (.getId (@tweets statusnum)))]
+        (let [status (.destroyFavorite @twitter (.getId (@tweets statusnum)))]
           (str
             "Success UnFav: @" 
             (.. status getUser getScreenName)
@@ -324,7 +323,7 @@
     (try 
       (let [status (focused-status (.. @main-stage getScene getFocusOwner))]
         (do
-          (.destroyStatus twitter (.getId status))
+          (.destroyStatus @twitter (.getId status))
           (str 
             "Success delete: @" 
             (.. status getUser getScreenName)
@@ -335,7 +334,7 @@
     (try 
       (let [status (@tweets statusnum)]
         (do
-          (.destroyStatus twitter (.getId status))
+          (.destroyStatus @twitter (.getId status))
           (str 
             "Success delete: @" 
             (.. status getUser getScreenName)
@@ -353,7 +352,7 @@
         (str "Success:" 
           (.getText
             (.updateStatus 
-              twitter 
+              @twitter 
               (doto
                 (StatusUpdate. 
                   (if 
@@ -433,16 +432,16 @@
         downer (doto (HBox.)
                (.setSpacing 5))
         upper (doto (HBox.))
-        favi-hover (ImageView. (Image. "favorite_hover.png" (double 16) (double 16) true true))
-        favi-on (ImageView. (Image. "favorite_on.png" (double 16) (double 16) true true))
+        favi-hover (ImageView. (Image. "favorite_hover.png" (double 12) (double 12) true true))
+        favi-on (ImageView. (Image. "favorite_on.png" (double 12) (double 12) true true))
         favb (doto (Button.) 
                (.setGraphic
                  (if (.isFavorited status) 
                    favi-on
                    favi-hover)))
-        reti-hover (ImageView. (Image. "retweet_hover.png" (double 16) (double 16) true true))
-        reti-on (ImageView. (Image. "retweet_on.png" (double 16) (double 16) true true))
-        repi (ImageView. (Image. "reply_hover.png" (double 16) (double 16) true true))
+        reti-hover (ImageView. (Image. "retweet_hover.png" (double 12) (double 12) true true))
+        reti-on (ImageView. (Image. "retweet_on.png" (double 12) (double 12) true true))
+        repi (ImageView. (Image. "reply_hover.png" (double 12) (double 12) true true))
         retb (doto (Button.) 
                (.setGraphic
                  (if (.isRetweeted status) 
@@ -537,7 +536,7 @@
   "引数の文字列からツイートを検索し，twitter4j.Statusで返す．"
   [& strs]
     (reverse
-      (.. twitter (search (Query. (apply str (join " " strs)))) getTweets)))
+      (.. @twitter (search (Query. (apply str (join " " strs)))) getTweets)))
 
 (defn gen-webview
   "引数のURLをWebViewでブラウズ"
@@ -586,13 +585,13 @@
   ([]
     (let [status (focused-status (.. @main-stage getScene getFocusOwner))]
       (if (.isRetweet status)
-        (.createFriendship twitter (.. status getRetweetedStatus getUser getId) true)
-        (.createFriendship twitter (.. status getUser getId) true))))
+        (.createFriendship @twitter (.. status getRetweetedStatus getUser getId) true)
+        (.createFriendship @twitter (.. status getUser getId) true))))
   ([statusnum]
     (let [status (@tweets statusnum)]
       (if (.isRetweet status)
-        (.createFriendship twitter (.. status getRetweetedStatus getUser getId) true)
-        (.createFriendship twitter (.. status getUser getId) true)))))
+        (.createFriendship @twitter (.. status getRetweetedStatus getUser getId) true)
+        (.createFriendship @twitter (.. status getUser getId) true)))))
 
 
 (defn get-selected-urls
@@ -610,10 +609,7 @@
       (add-runlater
         (.add coll 0 item))
       (dosync
-        (alter tweet-maps merge {item status}))
-      (add-runlater
-        (if (>= (.size coll) @max-nodes) 
-          (.remove coll (dec @max-nodes) (.size coll)))))))
+        (alter tweet-maps merge {item status})))))
 
 ; print 2 nodes
 (defn gen-notice
@@ -759,8 +755,48 @@
              #(spit (System/getProperty "java.class.path") cache)
              "お断りします")
            (print-node! "最新版にアップデートしました."))))))
-  
-    
+
+(defn open-twitter-signup!
+  "oauthtokenを更新し，Twitterの認証画面を開く"
+  [] 
+  (let [_ (get-oauthtoken!)
+        twitter-url (. @oauthtoken getAuthorizationURL)]
+    (gen-webview twitter-url)))
+
+(defn refresh-profileimg!
+  "画面左下の現在のアカウント画像を更新します"
+  []
+  (add-runlater
+    (.setImage (get-node "#profileimg") 
+      (Image. (.. @twitter (showUser @myname) getBiggerProfileImageURL)))))
+
+(defn add-new-acount!
+  "pinコードから生成したtoken，アカウントのtwitterインスタンスを登録します"
+  [pin]
+  (let [token-map (pin-2-token pin)
+        twitterins (token-2-twitter token-map)
+        screen-name-key (keyword (.getScreenName twitterins))]
+    (do
+      ;トークンを登録
+      (dosync
+        (alter subtokens merge 
+          {screen-name-key token-map}))
+      ;twitterインスタンスを登録
+      (dosync
+        (alter twitters merge
+          {screen-name-key twitterins}))
+      (spit (str (get-home) "/.grimoire/subtokens.clj")
+        @subtokens))))
+
+(defn select-acount!
+  "メインアカウントをacount(keyword)に変更します"
+  [acount]
+  (let [target (acount @twitters)
+        target-name (. target getScreenName)]
+    (reset! twitter target)
+    (reset! myname target-name)
+    (refresh-profileimg!)))
+
 ; デバック用
 (defn reload 
   ([]

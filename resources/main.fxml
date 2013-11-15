@@ -15,6 +15,7 @@
   <bottom>
     <HBox fx:id="futter" alignment="TOP_LEFT" prefHeight="30.0" prefWidth="600.0" spacing="10.0">
       <children>
+        <ImageView fx:id="profileimg" fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true" smooth="false" />
         <TextField fx:id="form" prefWidth="200.0" promptText="How are you doing?" HBox.hgrow="ALWAYS">
           <HBox.margin>
             <Insets fx:id="x1" />
@@ -130,7 +131,7 @@
                     (.setOnAction (proxy [EventHandler] []
                                     (handle [_]
                                       (do
-                                        (.. futter getChildren (remove 1 2))
+                                        (.. futter getChildren (remove 2 3))
                                         (.. futter getChildren (add pbtn))
                                         (binding [*ns* (find-ns 'grimoire.gui)]
                                           (print-node! (try 
@@ -192,14 +193,14 @@
                (add-runlater
                  (do 
                    (.requestFocus form)
-                   (.. futter getChildren (remove 1 2))
+                   (.. futter getChildren (remove 2 3))
                    (.. futter getChildren (add spell)))))
              ["9" false true]
              (fn [_]
                (add-runlater
                  (do 
                    (.requestFocus form)
-                   (.. futter getChildren (remove 1 2))
+                   (.. futter getChildren (remove 2 3))
                    (.. futter getChildren (add spell)))))
              ["J" false false]
              #(add-runlater
@@ -252,7 +253,7 @@
           (.setOnContextMenuRequested tllv
                   (proxy [EventHandler] [] 
                     (handle [e] 
-                      (let [users (cons (. (focused-status) getUser) (. (focused-status) getUserMentionEntities))
+                      (let [users (cons (. (focused-status) getUser) (vec (. (focused-status) getUserMentionEntities)))
                             useritms (map 
                                       #(doto (MenuItem. (str "@" (. % getScreenName)))
                                         (.setOnAction
@@ -260,7 +261,7 @@
                                             (handle [_]
                                               (show-profile! %)))))
                                       users)
-                            urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status tllv) getText) #"\s|\n|¡¡"))
+                            urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status tllv) getText) #"\s|\n|ï¿½ï¿½"))
                             urlitms (map 
                                       #(doto (MenuItem. %)
                                         (.setOnAction
@@ -278,12 +279,15 @@
                                    @plugins)]
                         (add-runlater
                           (do
-                            (.. conm getItems (remove 4 (.. conm getItems size)))
-                            (doall
-                              (map #(.. conm getItems (add %)) 
-                                (concat useritms urlitms plgs)))))))))
+                            (try
+                              (.. conm getItems (remove 4 (.. conm getItems size)))
+                              (catch Exception e nil))
+                            (try
+                              (doall
+                                (map #(.. conm getItems (add %)) 
+                                  (concat useritms urlitms plgs)))
+                              (catch Exception e nil))))))))
           (catch Exception e (println (.getMessage e))))
-
         (.setOnAction eform 
           (proxy [EventHandler] []
             (handle [_]

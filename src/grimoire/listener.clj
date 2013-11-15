@@ -26,7 +26,7 @@
           (dosync
             (alter tweets conj status))
           (if
-            (= (.. twitter getScreenName) (.. status getInReplyToScreenName)) 
+            (= @myname (.. status getInReplyToScreenName)) 
             (do
               (add-runlater
                 (add-nodes! mention-nodes status))
@@ -46,12 +46,18 @@
             (map #(.on-del % statusDeletionNotice) @plugins))
           (catch Exception e (print-node! (.getMessage e))))
         (loop [coll nodes]
+          (let [current (try
+                          (.get coll 0)
+                          (catch Exception e nil))]
           (if (or (= (.. statusDeletionNotice getStatusId)
-                   (.getId (@tweet-maps (first coll))))
-                (nil? (first coll)))
+                   (try
+                     (.getId (@tweet-maps current))
+                     (catch Exception e nil)))
+                (nil? current))
             (add-runlater
-              (.remove nodes (first coll)))
-            (recur (rest coll))))))
+              (if current
+                (.remove nodes current)))
+            (recur (rest coll)))))))
 
     (onTrackLimitationNotice [this numberOfLimitedStatuses]
       (do
@@ -102,8 +108,8 @@
           (doall
             (map #(.on-unfav % source target unfavoritedStatus) @plugins))
           (catch Exception e (print-node! (.getMessage e))))
-        (.add mention-nodes 0
-          (print-node!
+        (add-nodes! 
+          (gen-notice
             "Catched unFav! source:@" 
             (.getScreenName source) 
             " target:@" 
@@ -111,7 +117,16 @@
             " @ " 
             (.. unfavoritedStatus getUser getScreenName) 
             " -" 
-            (.getText unfavoritedStatus)))))
+            (.getText unfavoritedStatus)))
+        (print-node!
+          "Catched unFav! source:@" 
+          (.getScreenName source) 
+          " target:@" 
+          (.getScreenName target) 
+          " @ " 
+          (.. unfavoritedStatus getUser getScreenName) 
+          " -" 
+          (.getText unfavoritedStatus))))
 
     (onFollow [this source followedUser]
       (do
@@ -124,7 +139,7 @@
           (.getScreenName source) 
           " target:@" 
           (.getScreenName followedUser))
-        (.add mention-nodes 0
+        (add-nodes!
           (gen-notice
             "onFollow source:@" 
             (.getScreenName source) 
@@ -137,10 +152,13 @@
           (doall
             (map #(.on-follow % directMessage) @plugins))
           (catch Exception e (print-node! (.getMessage e))))
-        (.add mention-nodes 0
-          (print-node! 
+        (add-nodes!
+          (gen-notice
             "onDirectMessage text:" 
-            (.getText directMessage)))))
+            (.getText directMessage)))
+        (print-node! 
+          "onDirectMessage text:" 
+          (.getText directMessage))))
 
     (onUserListMemberAddition [this addedMember listOwner alist]
       (print-node! 
@@ -205,21 +223,31 @@
 
     (onBlock [this source blockedUser]
       (do
-        (.add mention-nodes 0
-          (print-node!
+        (add-nodes! 
+          (gen-notice
             "onBlock user:@"
             (.getScreenName source)
             " target:@"
-            (.getScreenName blockedUser)))))
+            (.getScreenName blockedUser)))
+        (print-node!
+          "onBlock user:@"
+          (.getScreenName source)
+          " target:@"
+          (.getScreenName blockedUser))))
 
     (onUnblock [this source unblockedUser]
       (do
-        (.add mention-nodes 0
-          (print-node! 
+        (add-nodes! 
+          (gen-notice
             "onUnBlock user:@"
             (.getScreenName source)
             " target:@"
-            (.getScreenName unblockedUser)))))
+            (.getScreenName unblockedUser)))
+        (print-node! 
+          "onUnBlock user:@"
+          (.getScreenName source)
+          " target:@"
+          (.getScreenName unblockedUser))))
 
     (onException [this ex]
       (do
@@ -227,201 +255,3 @@
         (print 
           "onException:"
           (.getMessage ex))))))
-
-; Userstream status listener (console)
-(defn c-listener []
-  (reify UserStreamListener
-    (onStatus [this status]
-      (do
-        (dosync
-          (alter tweets conj status))
-        (if 
-          (some #(= (.. twitter getScreenName) %) (map #(.getText %) (.. status getUserMentionEntities)))
-          (print "->"))
-        (print
-          (.. status getUser getScreenName)
-          ":"
-          (.. status getText)
-          (str (.. status getCreatedAt))
-          (get-source (.. status getSource))
-          (.indexOf @tweets status)
-          "\n")
-
-        (if 
-          (some #(= (.. twitter getScreenName) %) 
-            (map #(.getScreenName %)
-              (.. status getUserMentionEntities)))
-          (dosync
-            (alter mentions conj status)))))
-
-    (onDeletionNotice [this statusDeletionNotice]
-      (do
-        (print
-          "Got a status deletion notice id:" 
-          (.. statusDeletionNotice getStatusId)
-          "\n")))
-
-    (onTrackLimitationNotice [this numberOfLimitedStatuses]
-      (do
-        (print
-          "Got a track limitation notice:" 
-          numberOfLimitedStatuses
-          "\n")))
-
-    (onScrubGeo [this userId upToStatusId]
-      (do
-        (print
-          "Got scrub_geo event userId:" 
-          userId 
-          "upToStatusId:" 
-          upToStatusId
-          "\n")))
-
-    (onStallWarning [this warning]
-      (do
-        (print
-          "Got stall warning:" 
-          warning
-          "\n")))
-
-    (onFriendList [this friendIds]
-      (do
-        (dosync
-          (alter friends conj friendIds))))
-
-    (onFavorite [this source target favoritedStatus]
-      (do
-        (print
-          "You Gotta Fav! source:@" 
-          (.getScreenName source) 
-          " target:@" 
-          (.getScreenName target) 
-          " @ " 
-          (.. favoritedStatus getUser getScreenName) 
-          " -" 
-          (.getText favoritedStatus)
-          "\n")))
-
-    (onUnfavorite [this source target unfavoritedStatus]
-      (do
-        (print
-          "Catched unFav! source:@" 
-          (.getScreenName source) 
-          " target:@" 
-          (.getScreenName target) 
-          " @ " 
-          (.. unfavoritedStatus getUser getScreenName) 
-          " -" 
-          (.getText unfavoritedStatus)
-          "\n")))
-
-    (onFollow [this source followedUser]
-      (do
-        (print
-          "onFollow source:@" 
-          (.getScreenName source) 
-          " target:@" 
-          (.getScreenName followedUser)
-          "\n")))
-
-    (onDirectMessage [this directMessage]
-      (print
-        "onDirectMessage text:" 
-        (.getText directMessage)
-        "\n"))
-
-    (onUserListMemberAddition [this addedMember listOwner alist]
-      (print
-        (.getScreenName addedMember) 
-        "listOwner:@" 
-        (.getScreenName listOwner) 
-        "list:" 
-        (.getName alist)
-        "\n"))
-      
-    (onUserListMemberDeletion [this deletedMember listOwner alist]
-      (print
-        (.getScreenName deletedMember) 
-        "listOwner:@" 
-        (.getScreenName listOwner) 
-        "list:" 
-        (.getName alist)
-        "\n"))
-
-    (onUserListSubscription [this subscriber listOwner alist]
-      (print
-        "onUserListSubscribed subscriber:@" 
-        (.getScreenName subscriber) 
-        " listOwner:@"
-        (.getScreenName listOwner) 
-        "list:" 
-        (.getName alist)
-        "\n"))
-
-    (onUserListUnsubscription [this subscriber listOwner alist]
-      (print
-        "onUserListUnSubscribed subscriber:@" 
-        (.getScreenName subscriber) 
-        " listOwner:@"
-        (.getScreenName listOwner) 
-        "list:" 
-        (.getName alist)
-        "\n"))
-
-    (onUserListCreation [this listOwner alist]
-      (print
-        "onUserListCreated listOwner:@"
-        (.getScreenName listOwner)
-        " list:"
-        (.getName alist)
-        "\n"))
-
-    (onUserListUpdate [this listOwner alist]
-      (print
-        "onUserListUpdated listOwner:@"
-        (.getScreenName listOwner)
-        " list:"
-        (.getName alist)
-        "\n"))
-
-    (onUserListDeletion [this listOwner alist]
-      (print
-        "onUserListDestroyed listOwner:@"
-        (.getScreenName listOwner)
-        " list:"
-        (.getName alist)
-        "\n"))
-
-    (onUserProfileUpdate [this updatedUser]
-      (do
-        (print
-          "onUserProfileUpdated user:@"
-          (.getScreenName updatedUser)
-          "\n")))
-
-    (onBlock [this source blockedUser]
-      (do
-        (print
-          "onBlock user:@"
-          (.getScreenName source)
-          " target:@"
-          (.getScreenName blockedUser)
-          "\n")))
-
-    (onUnblock [this source unblockedUser]
-      (do
-        (print
-          "onUnBlock user:@"
-          (.getScreenName source)
-          " target:@"
-          (.getScreenName unblockedUser)
-          "\n")))
-
-    (onException [this ex]
-      (do
-        (.printStackTrace ex)
-        (print 
-          "onException:"
-          (.getMessage ex)
-          "\n")))))
-

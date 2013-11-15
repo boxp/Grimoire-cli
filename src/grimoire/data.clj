@@ -3,6 +3,10 @@
            (javafx.scene Node)))
 
 ; twitter
+(def tokens 
+  (atom nil))
+(def subtokens
+  (ref {}))
 (def oauthtoken
   (atom nil))
 (def tweets 
@@ -11,12 +15,6 @@
 (def tweet-maps 
   "Node -> status map"
   (ref {}))
-(def nodes 
-  "Listview's Item array"
-  (FXCollections/observableArrayList))
-(def mention-nodes 
-  "Listview's Item array"
-  (FXCollections/observableArrayList))
 (def mentions
   "Received mentions (deplicated)"
   (ref []))
@@ -28,6 +26,12 @@
   (atom nil))
 (def imagemap
   "Profile images map"
+  (ref {}))
+(def twitter
+  "Main twitter instance"
+  (atom nil))
+(def twitters
+  "Sub twitter instances"
   (ref {}))
 
 ; plugin
@@ -75,3 +79,9 @@
 (def theme 
   "Var grimoire's theme"
   (atom ""))
+(def nodes 
+  "Listview's Item array"
+  (FXCollections/observableArrayList))
+(def mention-nodes 
+  "Listview's Item array"
+  (FXCollections/observableArrayList))
