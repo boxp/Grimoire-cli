@@ -1,0 +1,5 @@
+#!/bin/sh
+lein clean 
+lein compile 
+cp resources/* target/classes/ 
+javafxpackager -createjar -nocss2bin -outfile Grimoire.jar -appclass grimoire.gui -srcdir target/classes -classpath "lib/clojure-1.5.1.jar;lib/tagsoup-1.2.1.jar;lib/clojure-jsr223-1.0.jar;lib/tools.nrepl-0.2.3.jar;lib/core.async-0.1.242.0-44b1e3-alpha.jar;lib/twitter4j-async-3.0.4.jar;lib/enlive-1.1.4.jar;lib/twitter4j-core-3.0.4.jar;lib/twitter4j-stream-3.0.4.jar;lib/jsoup-1.7.2.jar;lib/gntp-0.6.0.jar;lib/digest-1.5.0.jar"

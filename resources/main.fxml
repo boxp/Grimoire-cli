@@ -138,6 +138,10 @@
                                                           (load-string (.getText form))
                                                           (catch Exception e e)))))))))]
       (do
+        (.setOnAction repmenu
+          (proxy [EventHandler] []
+            (handle [_]
+              (reply-form! (.indexOf @tweets (focused-status))))))
         (.setOnAction favretmenu
           (proxy [EventHandler] []
             (handle [_]

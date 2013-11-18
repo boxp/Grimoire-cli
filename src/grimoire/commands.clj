@@ -505,13 +505,24 @@
         (.. node (setId "mentions")))
       node)))
 
+
+
 ; set-theme
-(defn set-theme
+(defn set-theme!
   "Grimoire全体のテーマを設定します(solarized_darkなど)"
   [name]
-  (.. (.getScene @main-stage) getStylesheets 
-    (add 
-      (str name ".css"))))
+   (do
+     (reset! theme (str name ".css"))
+     (.. (.getScene @main-stage) getStylesheets 
+       (add 
+         (str name ".css")))))
+
+(defn clear-theme!
+  "Grimoire全体のテーマをリセットします"
+  []
+  (do
+    (.. @main-stage getScene getStylesheets clear)
+    (reset! theme nil)))
 
 (defn autofav!
   "引数のユーザーを自動でふぁぼる(マジキチ向け)"

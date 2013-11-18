@@ -109,6 +109,7 @@
             (map #(.on-unfav % source target unfavoritedStatus) @plugins))
           (catch Exception e (print-node! (.getMessage e))))
         (add-nodes! 
+          mention-nodes
           (gen-notice
             "Catched unFav! source:@" 
             (.getScreenName source) 
@@ -140,6 +141,7 @@
           " target:@" 
           (.getScreenName followedUser))
         (add-nodes!
+          mention-nodes
           (gen-notice
             "onFollow source:@" 
             (.getScreenName source) 
@@ -153,6 +155,7 @@
             (map #(.on-follow % directMessage) @plugins))
           (catch Exception e (print-node! (.getMessage e))))
         (add-nodes!
+          mention-nodes
           (gen-notice
             "onDirectMessage text:" 
             (.getText directMessage)))
@@ -224,6 +227,7 @@
     (onBlock [this source blockedUser]
       (do
         (add-nodes! 
+          mention-nodes
           (gen-notice
             "onBlock user:@"
             (.getScreenName source)
@@ -238,6 +242,7 @@
     (onUnblock [this source unblockedUser]
       (do
         (add-nodes! 
+          mention-nodes
           (gen-notice
             "onUnBlock user:@"
             (.getScreenName source)

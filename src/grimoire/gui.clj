@@ -17,7 +17,8 @@
            (javafx.stage Stage Modality Popup)
            (javafx.scene.web WebView)
            (javafx.collections FXCollections ObservableList)
-           (javafx.fxml FXML FXMLLoader))
+           (javafx.fxml FXML FXMLLoader)
+           (twitter4j StatusUpdate))
   (:use [grimoire.oauth]
         [grimoire.services :only [start stop gen-twitterstream]]
         [grimoire.data]
@@ -29,6 +30,47 @@
   (:require [clojure.java.io :as io])
   (:gen-class
    :extends javafx.application.Application))
+
+(defn reply-form!
+  "リプライフォームを開き，statusnumに返信します."
+  [statusnum]
+  (let [target (gen-node! (@tweets statusnum))
+        form (TextField. (str "@" (.. (@tweets statusnum) getUser getScreenName) " "))
+        rbtn (doto (Button. "@")
+               (.setId "Button")
+               (.setOnAction 
+                 (proxy [EventHandler] []
+                   (handle [_]
+                     (.updateStatus @twitter
+                       (doto 
+                         (StatusUpdate.
+                           (if (> (count (.getText form)) 140)
+                             (apply str (take 137 (.getText form)) "...")
+                             (.getText form)))
+                         (.inReplyToStatusId (.getId (@tweets statusnum)))))))))
+        mainimg (Image. (.. @twitter (showUser @myname) getBiggerProfileImageURL) 20 20 true false true)
+        imgview (ImageView. mainimg)
+        bottom (doto (HBox.)
+                 (.. getChildren (add imgview))
+                 (.. getChildren (add form))
+                 (.. getChildren (add rbtn))
+                 (.setSpacing 20))
+        root (doto (VBox.)
+               (.. getChildren (add target))
+               (.. getChildren (add bottom)))
+        scene (doto (Scene. root)
+                (.. getStylesheets (add (str @theme ".css"))))
+        stage (doto (Stage.)
+                (.setScene scene)
+                (.setTitle (str "Grimoire - " (.. (@tweets statusnum) getUser getScreenName))))]
+    (do
+      (HBox/setHgrow bottom Priority/ALWAYS)
+      (HBox/setHgrow form Priority/ALWAYS)
+      (HBox/setMargin target 
+        (Insets. 20 20 0 20))
+      (HBox/setMargin bottom 
+        (Insets. 0 20 20 20))
+      (. stage show))))
 
 (defn show-profile!
   "プロファイルウインドウを生成し，表示します．user:twitter4j.Userインスタンス"
@@ -129,7 +171,10 @@
       (HBox/setHgrow listv Priority/ALWAYS)
       (VBox/setVgrow listv Priority/ALWAYS)
       (HBox/setHgrow root Priority/ALWAYS)
-      
+      (.setOnAction replymenu
+        (proxy [EventHandler] []
+          (handle [_]
+            (reply-form! (.indexOf @tweets (focused-status listv)))))) 
       (.setOnAction favmenu
         (proxy [EventHandler] []
           (handle [_]
@@ -227,6 +272,13 @@
                  (str (get-home)
                    "/.grimoire.clj"))
             (catch Exception e (println e)))))
+      
+      ; サブアカウントを読み込み
+      (dosync
+        (alter subtokens merge 
+          (try
+            (load-file (str (get-home) "/.grimoire/subtokens.clj"))
+            (catch Exception e {}))))
       ; set name
       (reset! myname (. @twitter getScreenName))
       ; backup scene
@@ -249,7 +301,7 @@
         (.setScene scene)
         .show)
       ; theme setting
-      (set-theme @theme)
+      (set-theme! @theme)
       (try
         (doall
           (map #(.on-start %)
