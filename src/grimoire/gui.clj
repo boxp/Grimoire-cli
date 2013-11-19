@@ -111,7 +111,7 @@
                 (.setTitle (str "Grimoire - @" (. user getScreenName)))
                 (.setScene scene))]
       (do
-        (VBox/setVgrow lv Priority/ALWAYS)
+        (VBox/setVgrow tabpane Priority/ALWAYS)
         (HBox/setHgrow lv Priority/ALWAYS)
         (VBox/setVgrow root Priority/ALWAYS)
         (VBox/setMargin image (Insets. 20 0 0 0))
@@ -123,8 +123,9 @@
         (. stage show))))
 
 (defn gen-pane
-  "Generate Pane, image: label's image url, lbl: Pane title, coll: listview's collection"
-  [#^java.lang.String image #^java.lang.String title #^ObservableList coll]
+  "新規ペインを作って返します, image: ペインタイトルに表示するアイコン, lbl: ペインタイトル, 
+   coll: ペインのメインタブが表示するObservableList, acount: メインタブが表示するアカウントのtwitterインスタンス"
+  [#^java.lang.String image #^java.lang.String title #^ObservableList coll #^twitter4j.Twitter acount]
   (let [lbl (doto (Label. title)
               (.setId "label")
               (.setFont (Font. 20)))
@@ -161,16 +162,29 @@
                 (.setItems coll)
                 (.setContextMenu conm))
                 ;(.setCellFactory cf))
+        img (doto (Image. 
+                    (.. acount 
+                      (showUser (. acount getScreenName)) getBiggerProfileImageURL)))
+        imgv (doto (ImageView. img)
+               (.setX 20)
+               (.setY 20))
+        tab (doto (Tab. (. acount getScreenName))
+              (.setContent listv)
+              (.setGraphic imgv)
+              (.setClosable false))
+        tabpane (doto (TabPane.)
+                  (.. getTabs (add tab)))
         root (doto (VBox.)
                (.setPrefWidth 100)
                (.setPrefHeight 200)
                (.. getChildren (add hbox))
-               (.. getChildren (add listv)))]
+               (.. getChildren (add tabpane)))]
     (do
       (HBox/setHgrow hbox Priority/ALWAYS)
       (HBox/setHgrow listv Priority/ALWAYS)
       (VBox/setVgrow listv Priority/ALWAYS)
       (HBox/setHgrow root Priority/ALWAYS)
+      (VBox/setVgrow tabpane Priority/ALWAYS)
       (.setOnAction replymenu
         (proxy [EventHandler] []
           (handle [_]
@@ -211,7 +225,7 @@
       (.setOnContextMenuRequested listv
                   (proxy [EventHandler] [] 
                     (handle [e] 
-                      (let [users (cons (. (focused-status) getUser) (vec (. (focused-status) getUserMentionEntities)))
+                      (let [users (cons (. (focused-status) getUser) (vec (map #(.showUser @twitter (. % getScreenName)) (.. (focused-status) getUserMentionEntities))))
                             useritms (map 
                                       #(doto (MenuItem. (str "@" (. % getScreenName)))
                                         (.setOnAction
@@ -263,6 +277,14 @@
         scene (Scene. root 800 600)
         mentions (reverse (.getMentions @twitter))]
     (do
+      ; backup scene
+      (reset! mainscene scene)
+      ; Add master pane
+      (.. scene (lookup "#pane") getChildren (add 
+        (gen-pane "home.png" "HomeTimeline" nodes @twitter)))
+      ; Add mentions pane
+      (.. scene (lookup "#pane") getChildren (add 
+        (gen-pane "reply_hover.png" "Mentions" mention-nodes @twitter)))
       ; check update
       (check-update)
       ; load rcfile
@@ -272,7 +294,6 @@
                  (str (get-home)
                    "/.grimoire.clj"))
             (catch Exception e (println e)))))
-      
       ; サブアカウントを読み込み
       (dosync
         (alter subtokens merge 
@@ -281,12 +302,6 @@
             (catch Exception e {}))))
       ; set name
       (reset! myname (. @twitter getScreenName))
-      ; backup scene
-      (reset! mainscene scene)
-      ; Add mentions pane
-      (add-runlater
-        (.. scene (lookup "#pane") getChildren (add 
-          (gen-pane "reply_hover.png" "Mentions" mention-nodes))))
       ; set main acount image
       (refresh-profileimg!)
       ; add mentioins tweets

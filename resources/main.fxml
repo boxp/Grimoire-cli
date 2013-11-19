@@ -30,38 +30,6 @@
   </bottom>
   <center>
     <HBox fx:id="pane" prefHeight="100.0" prefWidth="200.0">
-      <children>
-        <VBox fx:id="maintl" prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
-          <children>
-            <HBox id="node" prefHeight="20.0" prefWidth="100.0">
-              <children>
-                <ImageView fx:id="home" fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="false">
-                  <HBox.margin>
-                    <Insets right="5.0" />
-                  </HBox.margin>
-                </ImageView>
-                <Label id="label" prefHeight="20.0" prefWidth="150.0" text="HomeTimeLine">
-                  <font>
-                    <Font size="20.0" />
-                  </font>
-                </Label>
-              </children>
-            </HBox>
-            <ListView fx:id="tllv" blendMode="SRC_ATOP" cache="true" cacheHint="DEFAULT" depthTest="INHERIT" disable="false" focusTraversable="true" mouseTransparent="false" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-              <contextMenu>
-                <ContextMenu fx:id="conm">
-                  <items>
-                    <MenuItem mnemonicParsing="false" text="Reply" fx:id="repmenu" />
-                    <MenuItem mnemonicParsing="false" text="Favorite" fx:id="favmenu" />
-                    <MenuItem mnemonicParsing="false" text="Retweet" fx:id="retmenu" />
-                    <MenuItem mnemonicParsing="false" text="Favrite&amp;Retweet" fx:id="favretmenu" />
-                  </items>
-                </ContextMenu>
-              </contextMenu>
-            </ListView>
-          </children>
-        </VBox>
-      </children>
       <padding>
         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
       </padding>
@@ -138,43 +106,6 @@
                                                           (load-string (.getText form))
                                                           (catch Exception e e)))))))))]
       (do
-        (.setOnAction repmenu
-          (proxy [EventHandler] []
-            (handle [_]
-              (reply-form! (.indexOf @tweets (focused-status))))))
-        (.setOnAction favretmenu
-          (proxy [EventHandler] []
-            (handle [_]
-              (if @nervous
-                (bool-dialog 
-                  (str "Are you sure want to Favorite & Retweet?\n"
-                       (. (focused-status) getText))
-                       "Sure"
-                       #(favret)
-                       "Cancel")
-                (favret)))))
-        (.setOnAction favmenu
-          (proxy [EventHandler] []
-            (handle [_]
-              (if @nervous
-                (bool-dialog 
-                  (str "Are you sure want to Favorite?\n"
-                       (. (focused-status) getText))
-                       "Sure"
-                       #(fav)
-                       "Cancel"))
-              (fav))))
-        (.setOnAction retmenu
-          (proxy [EventHandler] []
-            (handle [_]
-              (if @nervous
-                (bool-dialog 
-                  (str "Are you sure want to Favorite?\n"
-                       (. (focused-status) getText))
-                       "Sure"
-                       #(ret)
-                       "Cancel")
-                (ret)))))
         (.setOnAction exit 
           (proxy [EventHandler] []
             (handle [_]
@@ -189,7 +120,6 @@
                 (do
                   (post (.getText form))
                   (.clear form))))))
-        (.setImage home (Image. "home.png"))
         (dosync
           (alter key-maps merge 
             {["8" false true]
@@ -246,57 +176,9 @@
              (fn [_] (System/exit 0))
              ["F11" false false]
              (fn [_] (.setFullScreen @main-stage true))}))
-        (.setOnKeyPressed maintl
-          (proxy [EventHandler] []
-            (handle [ke]
-              (add-runlater
-                (try
-                  ((@key-maps [(.. ke getCode getName) (.isControlDown ke) (.isShiftDown ke)]) tllv)
-                  (catch Exception e (println (.getMessage e))))))))
-        (try
-          (.setOnContextMenuRequested tllv
-                  (proxy [EventHandler] [] 
-                    (handle [e] 
-                      (let [users (cons (. (focused-status) getUser) (vec (. (focused-status) getUserMentionEntities)))
-                            useritms (map 
-                                      #(doto (MenuItem. (str "@" (. % getScreenName)))
-                                        (.setOnAction
-                                          (proxy [EventHandler] []
-                                            (handle [_]
-                                              (show-profile! %)))))
-                                      users)
-                            urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status tllv) getText) #"\s|\n|��"))
-                            urlitms (map 
-                                      #(doto (MenuItem. %)
-                                        (.setOnAction
-                                          (proxy [EventHandler] []
-                                            (handle [_]
-                                              (gen-webview %)))))
-                                  urls)
-                            plgs (map 
-                                   #(if (. % get-name)
-                                     (doto (MenuItem. (. % get-name))
-                                       (.setOnAction
-                                         (proxy [EventHandler] []
-                                           (handle [e]
-                                             (.on-click % e))))))
-                                   @plugins)]
-                        (add-runlater
-                          (do
-                            (try
-                              (.. conm getItems (remove 4 (.. conm getItems size)))
-                              (catch Exception e nil))
-                            (try
-                              (doall
-                                (map #(.. conm getItems (add %)) 
-                                  (concat useritms urlitms plgs)))
-                              (catch Exception e nil))))))))
-          (catch Exception e (println (.getMessage e))))
         (.setOnAction eform 
           (proxy [EventHandler] []
             (handle [_]
-              (input-form))))
-        (.setItems tllv nodes)))
-        ;(.setCellFactory tllv cf)))
+              (input-form))))))
   ]]></fx:script>
 </BorderPane>
