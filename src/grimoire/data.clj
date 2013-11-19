@@ -15,12 +15,6 @@
 (def tweet-maps 
   "Node -> status map"
   (ref {}))
-(def mentions
-  "Received mentions (deplicated)"
-  (ref []))
-(def friends 
-  "Received friends list (deplicated)"
-  (ref #{}))
 (def myname
   "My twitter screen name"
   (atom nil))
@@ -32,6 +26,20 @@
   (atom nil))
 (def twitters
   "Sub twitter instances"
+  (ref {}))
+(def twitterstream 
+  "メインユーザーストリームインスタンス"
+  (atom nil))
+(def twitterstreams 
+  "サブユーザーストリームインスタンス"
+  (ref {}))
+
+;サブアカウントのnodes(ObservableList)を格納するrecord
+(defrecord NodesList
+  [nodes mention-nodes])
+
+(def nodes-maps
+  "サブアカウントのnodesマップ"
   (ref {}))
 
 ; plugin

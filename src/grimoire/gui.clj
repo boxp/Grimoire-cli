@@ -20,7 +20,7 @@
            (javafx.fxml FXML FXMLLoader)
            (twitter4j StatusUpdate))
   (:use [grimoire.oauth]
-        [grimoire.services :only [start stop gen-twitterstream]]
+        [grimoire.services]
         [grimoire.data]
         [grimoire.plugin]
         [grimoire.commands]
@@ -122,11 +122,123 @@
             (doall (map #(add-nodes! ol %) status))))
         (. stage show))))
 
+(defn gen-tab
+  "新規タブを生成します, acount: タブが表示するアカウントのtwitterインスタンス, coll:タブのlistviewが表示するObservableList"
+  [#^twitter4j.Twitter acount #^ObservableList coll]
+  (let [replymenu (MenuItem. "Reply")
+        favmenu (MenuItem. "Favorite")
+        retmenu (MenuItem. "Retweet")
+        favretmenu (MenuItem. "Fav&Retweet")
+        conm (doto (ContextMenu.) 
+               (.. getItems (add replymenu))
+               (.. getItems (add favmenu))
+               (.. getItems (add retmenu))
+               (.. getItems (add favretmenu)))
+        listv (doto (ListView.)
+                (.setItems coll)
+                (.setContextMenu conm))
+        img (doto (Image. 
+                    (.. acount 
+                      (showUser (. acount getScreenName)) getBiggerProfileImageURL)))
+        imgv (doto (ImageView. img)
+               (.setX 20)
+               (.setY 20))
+        tab (doto (Tab. (. acount getScreenName))
+              (.setContent listv)
+              (.setGraphic imgv)
+              (.setClosable false))]
+    (do
+      (HBox/setHgrow listv Priority/ALWAYS)
+      (VBox/setVgrow listv Priority/ALWAYS)
+      (.setOnAction replymenu
+        (proxy [EventHandler] []
+          (handle [_]
+            (reply-form! (.indexOf @tweets (focused-status listv)))))) 
+      (.setOnAction favmenu
+        (proxy [EventHandler] []
+          (handle [_]
+            (if @nervous
+              (bool-dialog 
+                (str "Are you sure want to Favorite?\n"
+                     (. (focused-status listv) getText))
+                     "Sure"
+                     #(fav)
+                     "Cancel"))
+            (fav))))
+      (.setOnAction retmenu
+        (proxy [EventHandler] []
+          (handle [_]
+            (if @nervous
+              (bool-dialog 
+                (str "Are you sure want to Favorite?\n"
+                     (. (focused-status listv) getText))
+                     "Sure"
+                     #(ret)
+                     "Cancel")
+              (ret)))))
+      (.setOnAction favretmenu
+        (proxy [EventHandler] []
+          (handle [_]
+            (if @nervous
+              (bool-dialog 
+                (str "Are you sure want to Favorite & Retweet?\n"
+                     (. (focused-status listv) getText))
+                     "Sure"
+                     #(favret)
+                     "Cancel")
+              (favret)))))
+      (.setOnContextMenuRequested listv
+                  (proxy [EventHandler] [] 
+                    (handle [e] 
+                      (let [users (cons (. (focused-status) getUser) (vec (map #(.showUser @twitter (. % getScreenName)) (.. (focused-status) getUserMentionEntities))))
+                            useritms (map 
+                                      #(doto (MenuItem. (str "@" (. % getScreenName)))
+                                        (.setOnAction
+                                          (proxy [EventHandler] []
+                                            (handle [_]
+                                              (show-profile! %)))))
+                                      users)
+                            urls (filter #(= (seq "http") (take 4 %)) (split (.. (focused-status listv) getText) #"\s|\n|　"))
+                            urlitms (map 
+                                  #(doto (MenuItem. %)
+                                    (.setOnAction
+                                      (proxy [EventHandler] []
+                                        (handle [_]
+                                          (gen-webview %)))))
+                                  urls)
+                            plgs (map 
+                                  #(if (. % get-name)
+                                     (doto (MenuItem. (. % get-name))
+                                       (.setOnAction
+                                         (proxy [EventHandler] []
+                                           (handle [e]
+                                             (.on-click % e))))))
+                                   @plugins)]
+                        (add-runlater
+                          (do
+                            (try
+                              (.. conm getItems (remove 4 (.. conm getItems size)))
+                              (catch Exception e nil))
+                            (try
+                              (doall
+                                (map #(.. conm getItems (add %))
+                                  (concat useritms urlitms plgs)))
+                              (catch Exception e nil))))))))
+        (.setOnKeyPressed listv
+                (proxy [EventHandler] []
+                  (handle [ke]
+                    (try
+                      ((@key-maps [(.. ke getCode getName) (.isControlDown ke) (.isShiftDown ke)]) listv)
+                      (catch Exception e (println (.getMessage e)))))))
+        tab)))
+
+
 (defn gen-pane
   "新規ペインを作って返します, image: ペインタイトルに表示するアイコン, lbl: ペインタイトル, 
    coll: ペインのメインタブが表示するObservableList, acount: メインタブが表示するアカウントのtwitterインスタンス"
   [#^java.lang.String image #^java.lang.String title #^ObservableList coll #^twitter4j.Twitter acount]
-  (let [lbl (doto (Label. title)
+  (let [screenname (. acount getScreenName)
+        lbl (doto (Label. title)
               (.setId "label")
               (.setFont (Font. 20)))
         image (doto (ImageView. image)
@@ -146,25 +258,13 @@
                (.. getItems (add favmenu))
                (.. getItems (add retmenu))
                (.. getItems (add favretmenu)))
-        ;cf (reify Callback 
-        ;     (call [this _]
-        ;       #^ListCell
-        ;       (proxy [ListCell] []
-        ;         (updateItem [#^twitter4j.Status status #^java.lang.Boolean emp?]
-        ;           (proxy-super updateItem status emp?)
-        ;           (future
-        ;             (add-runlater
-        ;               (if (not emp?)
-        ;                 (.setGraphic this
-        ;                   (gen-node! #^twitter4j.Status status)))))))))
         listv (doto (ListView.)
-                (.setId (str title "-tllv"))
+                (.setId title)
                 (.setItems coll)
                 (.setContextMenu conm))
-                ;(.setCellFactory cf))
         img (doto (Image. 
                     (.. acount 
-                      (showUser (. acount getScreenName)) getBiggerProfileImageURL)))
+                      (showUser screenname) getBiggerProfileImageURL)))
         imgv (doto (ImageView. img)
                (.setX 20)
                (.setY 20))
@@ -173,6 +273,7 @@
               (.setGraphic imgv)
               (.setClosable false))
         tabpane (doto (TabPane.)
+                  (.setId title)
                   (.. getTabs (add tab)))
         root (doto (VBox.)
                (.setPrefWidth 100)
@@ -267,6 +368,48 @@
               (catch Exception e (println (.getMessage e)))))))                 
       root)))
 
+(defn add-new-acount!
+  "pinコードから生成したtoken，アカウントのtwitterインスタンスを登録します"
+  [token-map]
+  (let [twitterins (token-2-twitter token-map)
+        screenname (. twitterins getScreenName)
+        node-list (->NodesList (FXCollections/observableArrayList) (FXCollections/observableArrayList))
+        nodes (:nodes node-list)
+        mention-nodes (:mention-nodes node-list)
+        twitterstreamins (token-2-twitterstream token-map twitterins nodes listener)
+        screen-name-key (keyword screenname)]
+    (do
+      ;トークンを登録
+      (dosync
+        (alter subtokens merge 
+          {screen-name-key token-map}))
+      ;twitterインスタンスを登録
+      (dosync
+        (alter twitters merge
+          {screen-name-key twitterins}))
+      ;twitterstreamインスタンスの登録
+      (dosync
+        (alter twitterstreams merge
+          {screen-name-key twitterstreamins}))
+      ;nodeslistの登録
+      (dosync
+        (alter nodes-maps merge
+          {screen-name-key node-list}))
+      ;Hometimelineタブの追加
+      (add-runlater 
+        (.. (get-node "#HomeTimeline") getTabs
+          (add (gen-tab twitterins nodes))))
+      ;Hometimelineタブの追加
+      (add-runlater 
+        (.. (get-node "#Mentions") getTabs
+          (add (gen-tab twitterins mention-nodes))))
+      ;サブトークンの保存
+      (spit (str (get-home) "/.grimoire/subtokens.clj")
+        @subtokens)
+      ;userstreamの開始
+      ;(. twitterstreamins user))))
+      )))
+
 
 ; main window
 ; dirty
@@ -275,7 +418,10 @@
   (let [; load fxml layout
         root (-> "main.fxml" io/resource FXMLLoader/load)
         scene (Scene. root 800 600)
-        mentions (reverse (.getMentions @twitter))]
+        mentions (reverse (.getMentions @twitter))
+        cached-subtokens (try
+                           (load-file (str (get-home) "/.grimoire/subtokens.clj"))
+                           (catch Exception e {}))]
     (do
       ; backup scene
       (reset! mainscene scene)
@@ -297,14 +443,15 @@
       ; サブアカウントを読み込み
       (dosync
         (alter subtokens merge 
-          (try
-            (load-file (str (get-home) "/.grimoire/subtokens.clj"))
-            (catch Exception e {}))))
+          cached-subtokens))
+      (doall
+        (map add-new-acount!
+          (vals cached-subtokens)))
       ; set name
       (reset! myname (. @twitter getScreenName))
       ; set main acount image
       (refresh-profileimg!)
-      ; add mentioins tweets
+      ; add mentions tweets
       (dosync
         (alter tweets (comp vec concat) mentions))
       (doall
@@ -312,7 +459,7 @@
       (doall
         (map #(add-nodes! mention-nodes %) mentions))
       (doto stage 
-        (.setTitle "Grimoire - v0.1.2")
+        (.setTitle "Grimoire - v20131120-1")
         (.setScene scene)
         .show)
       ; theme setting

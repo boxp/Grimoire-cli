@@ -5,6 +5,7 @@
         [clojure.java.io]
         [grimoire.data]
         [grimoire.oauth]
+        [grimoire.services]
         [grimoire.wrapper])
   (:require [net.cgrand.enlive-html :as en])
   (:import (twitter4j TwitterFactory Query Status User UserMentionEntity)
@@ -780,24 +781,6 @@
   (add-runlater
     (.setImage (get-node "#profileimg") 
       (Image. (.. @twitter (showUser @myname) getBiggerProfileImageURL)))))
-
-(defn add-new-acount!
-  "pinコードから生成したtoken，アカウントのtwitterインスタンスを登録します"
-  [pin]
-  (let [token-map (pin-2-token pin)
-        twitterins (token-2-twitter token-map)
-        screen-name-key (keyword (.getScreenName twitterins))]
-    (do
-      ;トークンを登録
-      (dosync
-        (alter subtokens merge 
-          {screen-name-key token-map}))
-      ;twitterインスタンスを登録
-      (dosync
-        (alter twitters merge
-          {screen-name-key twitterins}))
-      (spit (str (get-home) "/.grimoire/subtokens.clj")
-        @subtokens))))
 
 (defn select-acount!
   "メインアカウントをacount(keyword)に変更します"

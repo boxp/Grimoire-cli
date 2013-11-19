@@ -1,14 +1,11 @@
 (ns grimoire.services
   (:use [grimoire.oauth :as oauth]
-        [grimoire.listener]
         [grimoire.data]
         [clojure.tools.nrepl.server :only (start-server stop-server)])
-  (:import 
-    (twitter4j TwitterStreamFactory UserStreamListener)
-    (twitter4j.conf ConfigurationContext)
-    (twitter4j.conf ConfigurationBuilder)))
-
-(def twitterstream (atom nil))
+  (:import (twitter4j Status Twitter TwitterFactory TwitterException TwitterStreamFactory UserStreamListener)
+           (twitter4j.auth AccessToken OAuthAuthorization)
+           (twitter4j.conf ConfigurationContext ConfigurationBuilder)
+           (java.io File)))
 
 (defn gen-twitterstream
   [listener]
@@ -17,11 +14,32 @@
           (.setOAuthConsumerSecret (:consumerSecret consumers))
           (.setOAuthAccessToken (:token @tokens))
           (.setOAuthAccessTokenSecret (:tokenSecret @tokens)))
-        conf (.build confbuilder)]
-    (reset! twitterstream 
-        (doto (.getInstance (TwitterStreamFactory. conf))
-          (.addListener ^twitter4j.UserStreamListener (listener))))))
-  
+        conf (.build confbuilder)
+        tsi (doto (.getInstance (TwitterStreamFactory. conf))
+              (.addListener ^twitter4j.UserStreamListener (listener @twitter nodes mention-nodes)))]
+    (reset! twitterstream tsi)
+    (dosync 
+      (alter twitterstreams merge {(keyword @myname) tsi}))))
+
+(defn token-2-twitterstream
+  "トークンのMapからTwitterStreamインスタンスを生成し，返します, token:トークンのマップ, twitter:Twitterインスタンス, nodes-list:NodesListレコード"
+  [token twitter nodes-list listener]
+  (let [confbuilder (doto (ConfigurationBuilder.)
+                      (.setDebugEnabled true)
+                      (.setPrettyDebugEnabled true)
+                      (.setOAuthConsumerKey (:consumerKey consumers))
+                      (.setOAuthConsumerSecret (:consumerSecret consumers))
+                      (.setOAuthAccessToken (:token tokens))
+                      (.setOAuthAccessTokenSecret (:tokenSecret tokens)))
+        conf (.build confbuilder)
+        nodes (:nodes nodes-list)
+        mentions (:mention-nodes nodes-list)
+        tsi (doto (.getInstance (TwitterStreamFactory. conf))
+              (.addListener ^twitter4j.UserStreamListener 
+                (listener twitter nodes mention-nodes)))]
+    tsi))
+
+
 (defn start 
   []
   "start userstream"
