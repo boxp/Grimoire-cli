@@ -129,6 +129,7 @@
         favmenu (MenuItem. "Favorite")
         retmenu (MenuItem. "Retweet")
         favretmenu (MenuItem. "Fav&Retweet")
+        screenname (. acount getScreenName)
         conm (doto (ContextMenu.) 
                (.. getItems (add replymenu))
                (.. getItems (add favmenu))
@@ -143,7 +144,8 @@
         imgv (doto (ImageView. img)
                (.setX 20)
                (.setY 20))
-        tab (doto (Tab. (. acount getScreenName))
+        tab (doto (Tab. screenname)
+              (.setId screenname)
               (.setContent listv)
               (.setGraphic imgv)
               (.setClosable false))]
@@ -377,7 +379,9 @@
         nodes (:nodes node-list)
         mention-nodes (:mention-nodes node-list)
         twitterstreamins (token-2-twitterstream token-map twitterins node-list listener)
-        screen-name-key (keyword screenname)]
+        screen-name-key (keyword screenname)
+        nodes-tab (gen-tab twitterins nodes)
+        mentions-tab (gen-tab twitterins mention-nodes)]
     (do
       ;トークンを登録
       (dosync
@@ -398,11 +402,15 @@
       ;Hometimelineタブの追加
       (add-runlater 
         (.. (get-node "#HomeTimeline") getTabs
-          (add (gen-tab twitterins nodes))))
+          (add nodes-tab)))
       ;Mentionsタブの追加
       (add-runlater 
         (.. (get-node "#Mentions") getTabs
-          (add (gen-tab twitterins mention-nodes))))
+          (add mentions-tab)))
+      ;タブの登録
+      (dosync
+        (alter tabs merge 
+          {screen-name-key [nodes-tab mentions-tab]}))
       ;サブトークンの保存
       (spit (str (get-home) "/.grimoire/subtokens.clj")
         @subtokens)
@@ -467,6 +475,8 @@
         (.setTitle "Grimoire - v20131120-2")
         (.setScene scene)
         .show)
+      ; load plugin
+      (load-plugin)
       ; theme setting
       (set-theme! @theme)
       (try

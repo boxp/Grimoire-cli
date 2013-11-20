@@ -791,6 +791,25 @@
     (reset! myname target-name)
     (refresh-profileimg!)))
 
+(defn delete-acount!
+  "アカウントを削除"
+  [acount]
+  (let [target-tabs (acount @tabs)
+        maintl-list (.. (get-node "#HomeTimeline") getTabs)
+        mention-list (.. (get-node "#Mentions") getTabs)
+        twitterstreamins (acount @twitterstreams)]
+    (do
+      ; userstreamの停止
+      (. twitterstreamins shutdown)
+      ; tokenの削除
+      (dosync
+        (alter subtokens dissoc acount))
+      (spit (str (get-home) "/.grimoire/subtokens.clj")
+        @subtokens)
+      ; tabの消去
+      (. maintl-list (remove (target-tabs 0)))
+      (. mention-list (remove (target-tabs 1))))))
+
 ; デバック用
 (defn reload 
   ([]

@@ -93,3 +93,6 @@
 (def mention-nodes 
   "Listview's Item array"
   (FXCollections/observableArrayList))
+(def tabs
+  "タブを収納"
+  (ref {}))
