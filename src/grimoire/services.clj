@@ -18,6 +18,10 @@
         tsi (doto (.getInstance (TwitterStreamFactory. conf))
               (.addListener ^twitter4j.UserStreamListener (listener @twitter nodes mention-nodes)))]
     (reset! twitterstream tsi)
+    ; Observablelistのマップを追加
+    (dosync
+      (alter nodes-maps merge
+        {(keyword @myname) (->NodesList nodes mention-nodes)}))
     (dosync 
       (alter twitterstreams merge {(keyword @myname) tsi}))))
 
@@ -29,14 +33,14 @@
                       (.setPrettyDebugEnabled true)
                       (.setOAuthConsumerKey (:consumerKey consumers))
                       (.setOAuthConsumerSecret (:consumerSecret consumers))
-                      (.setOAuthAccessToken (:token tokens))
-                      (.setOAuthAccessTokenSecret (:tokenSecret tokens)))
+                      (.setOAuthAccessToken (:token token))
+                      (.setOAuthAccessTokenSecret (:tokenSecret token)))
         conf (.build confbuilder)
         nodes (:nodes nodes-list)
         mentions (:mention-nodes nodes-list)
         tsi (doto (.getInstance (TwitterStreamFactory. conf))
               (.addListener ^twitter4j.UserStreamListener 
-                (listener twitter nodes mention-nodes)))]
+                (listener twitter nodes mentions)))]
     tsi))
 
 

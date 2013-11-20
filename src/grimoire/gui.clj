@@ -376,7 +376,7 @@
         node-list (->NodesList (FXCollections/observableArrayList) (FXCollections/observableArrayList))
         nodes (:nodes node-list)
         mention-nodes (:mention-nodes node-list)
-        twitterstreamins (token-2-twitterstream token-map twitterins nodes listener)
+        twitterstreamins (token-2-twitterstream token-map twitterins node-list listener)
         screen-name-key (keyword screenname)]
     (do
       ;トークンを登録
@@ -399,7 +399,7 @@
       (add-runlater 
         (.. (get-node "#HomeTimeline") getTabs
           (add (gen-tab twitterins nodes))))
-      ;Hometimelineタブの追加
+      ;Mentionsタブの追加
       (add-runlater 
         (.. (get-node "#Mentions") getTabs
           (add (gen-tab twitterins mention-nodes))))
@@ -407,8 +407,7 @@
       (spit (str (get-home) "/.grimoire/subtokens.clj")
         @subtokens)
       ;userstreamの開始
-      ;(. twitterstreamins user))))
-      )))
+      (. twitterstreamins user))))
 
 
 ; main window
@@ -418,10 +417,18 @@
   (let [; load fxml layout
         root (-> "main.fxml" io/resource FXMLLoader/load)
         scene (Scene. root 800 600)
-        mentions (reverse (.getMentions @twitter))
         cached-subtokens (try
                            (load-file (str (get-home) "/.grimoire/subtokens.clj"))
-                           (catch Exception e {}))]
+                           (catch Exception e {}))
+        ; サブアカウントを読み込み
+        _ (dosync
+            (alter subtokens merge 
+              cached-subtokens))
+        _  (doall
+            (map add-new-acount!
+              (vals cached-subtokens)))
+
+        mention-tweets (apply concat (map #(hash-map (key %) (reverse (. (val %) getMentions))) @twitters))]
     (do
       ; backup scene
       (reset! mainscene scene)
@@ -440,26 +447,24 @@
                  (str (get-home)
                    "/.grimoire.clj"))
             (catch Exception e (println e)))))
-      ; サブアカウントを読み込み
-      (dosync
-        (alter subtokens merge 
-          cached-subtokens))
-      (doall
-        (map add-new-acount!
-          (vals cached-subtokens)))
-      ; set name
-      (reset! myname (. @twitter getScreenName))
       ; set main acount image
       (refresh-profileimg!)
       ; add mentions tweets
-      (dosync
-        (alter tweets (comp vec concat) mentions))
       (doall
-        (map #(add-nodes! nodes %) mentions))
-      (doall
-        (map #(add-nodes! mention-nodes %) mentions))
+        (map
+          (fn [mention-tweet] 
+            (let [mentions (val mention-tweet)
+                  nodes (:nodes ((key mention-tweet) @nodes-maps))
+                  mention-nodes (:mention-nodes ((key mention-tweet) @nodes-maps))]
+              (dosync
+                (alter tweets (comp vec concat) mentions))
+              (doall
+                (map #(add-nodes! nodes %) mentions))
+              (doall
+                (map #(add-nodes! mention-nodes %) mentions))))
+          mention-tweets))
       (doto stage 
-        (.setTitle "Grimoire - v20131120-1")
+        (.setTitle "Grimoire - v20131120-2")
         (.setScene scene)
         .show)
       ; theme setting
@@ -482,6 +487,8 @@
           ; send stage to fxml
           (get-tokens)
           (gen-twitter)
+          ; set name
+          (reset! myname (. @twitter getScreenName))
           (gen-twitterstream listener)
           (start)
           (mainwin stage))
