@@ -473,6 +473,7 @@
           mention-tweets))
       (doto stage 
         (.setTitle "Grimoire - v20131120-2")
+        (.. getIcons (add (Image. "Grimoire_icon.png")))
         (.setScene scene)
         .show)
       ; load plugin
