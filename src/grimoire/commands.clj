@@ -785,7 +785,7 @@
 (defn select-acount!
   "メインアカウントをacount(keyword)に変更します"
   [acount]
-  (let [target (acount @twitters)
+  (let [target (@twitters acount)
         target-name (. target getScreenName)]
     (reset! twitter target)
     (reset! myname target-name)
@@ -794,7 +794,7 @@
 (defn delete-acount!
   "アカウントを削除"
   [acount]
-  (let [target-tabs (acount @tabs)
+  (let [target-tabs (@tabs acount)
         maintl-list (.. (get-node "#HomeTimeline") getTabs)
         mention-list (.. (get-node "#Mentions") getTabs)
         twitterstreamins (acount @twitterstreams)]

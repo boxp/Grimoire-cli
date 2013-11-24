@@ -415,8 +415,18 @@
       (spit (str (get-home) "/.grimoire/subtokens.clj")
         @subtokens)
       ;userstreamの開始
-      (. twitterstreamins user))))
+      (. twitterstreamins user)
+      screenname)))
 
+(defn acount-mgr!
+  "アカウントマネージャーを開く"
+  []
+  (let [root (-> "acountmgr.fxml" io/resource FXMLLoader/load)
+        scene (Scene. root)
+        stage (doto (Stage.)
+                (.setScene scene)
+                (.setTitle "Grimoire - Acount manager"))]
+    (. stage show)))
 
 ; main window
 ; dirty

@@ -50,6 +50,9 @@
           <items>
             <MenuItem mnemonicParsing="false" text="Evalation form  (Ctrl-E)" fx:id="eform" />
           </items>
+          <items>
+            <MenuItem mnemonicParsing="false" text="Acount manager" fx:id="amanager" />
+          </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Help">
           <items>
@@ -106,6 +109,10 @@
                                                           (load-string (.getText form))
                                                           (catch Exception e e)))))))))]
       (do
+        (.setOnAction amanager
+          (proxy [EventHandler] []
+            (handle [_]
+              (acount-mgr!))))
         (.setOnAction exit 
           (proxy [EventHandler] []
             (handle [_]
