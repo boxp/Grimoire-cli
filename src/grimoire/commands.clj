@@ -616,7 +616,9 @@
 (defn add-nodes!
   "statusからnodeを生成してcoll(observablearraylist)に追加します"
   [coll status]
-  (let [item (gen-node! status)]
+  (let [_ (dosync
+            (alter tweets conj status))
+        item (gen-node! status)]
     (do
       (add-runlater
         (.add coll 0 item))

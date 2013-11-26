@@ -25,3 +25,5 @@
                  (load-file 
                    (str (get-home) "/.grimoire/plugin/" %)))
             loaded))))))
+
+(load-plugin)

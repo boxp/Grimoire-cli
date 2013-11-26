@@ -486,8 +486,6 @@
         (.. getIcons (add (Image. "Grimoire_icon.png")))
         (.setScene scene)
         .show)
-      ; load plugin
-      (load-plugin)
       ; theme setting
       (set-theme! @theme)
       (try

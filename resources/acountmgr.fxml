@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?language Clojure?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+
+<BorderPane id="BorderPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2">
+  <bottom>
+    <ToolBar focusTraversable="false" orientation="HORIZONTAL" BorderPane.alignment="BOTTOM_LEFT">
+      <items>
+        <Button fx:id="add" alignment="CENTER_LEFT" mnemonicParsing="false" text="+" textAlignment="LEFT" />
+        <TextField fx:id="pin" alignment="CENTER_RIGHT" blendMode="SRC_OVER" prefWidth="480.0" promptText="Please Input PIN Code." />
+        <Button fx:id="submit" alignment="CENTER_RIGHT" cancelButton="false" contentDisplay="LEFT" defaultButton="true" disable="false" mnemonicParsing="false" text="Submit" />
+      </items>
+      <BorderPane.margin>
+        <Insets />
+      </BorderPane.margin>
+    </ToolBar>
+  </bottom>
+  <center>
+    <ListView fx:id="lv" prefHeight="200.0" prefWidth="200.0">
+      <contextMenu>
+        <ContextMenu>
+          <items>
+            <MenuItem fx:id="select" mnemonicParsing="false" text="select" />
+            <MenuItem fx:id="delete" mnemonicParsing="false" text="delete" />
+          </items>
+        </ContextMenu>
+      </contextMenu>
+    </ListView>
+  </center>
+  <fx:script><![CDATA[
+    (use '[grimoire.commands]
+         '[grimoire.oauth]
+         '[grimoire.data]
+         '[grimoire.services]
+         '[grimoire.gui]
+         '[grimoire.plugin])
+    (import '(javafx.scene.input Clipboard ClipboardContent)
+            '(javafx.application Application Platform)
+            '(javafx.scene Node Scene)
+            '(javafx.scene.web WebView)
+            '(javafx.scene.input KeyCode)
+            '(javafx.scene.text Text Font FontWeight)
+            '(javafx.scene.control Label TextField PasswordField Button Hyperlink ListView MenuItem ListCell ListView)
+            '(javafx.util Callback)
+            '(javafx.scene.layout GridPane HBox VBox Priority)
+            '(javafx.scene.paint Color)
+            '(javafx.scene.image Image ImageView)
+            '(javafx.geometry Pos Insets)
+            '(javafx.event EventHandler)
+            '(javafx.stage Stage Modality)
+            '(javafx.scene.web WebView)
+            '(javafx.collections FXCollections ObservableList))   
+    (let [gen-lbl (fn [name]
+                    (let [img (Image. (.. @twitter (showUser name) getBiggerProfileImageURL) true)
+                          imgv (ImageView. img)
+                          lbl (doto (Label. name) 
+                                (.setGraphic imgv))]
+                      lbl))
+          node-maps (ref
+                      (apply merge
+                        (for [name (map #(. (val %) getScreenName) @twitters)
+                              :let [lbl (gen-lbl name)]]
+                          {lbl name})))
+          lbls (FXCollections/observableArrayList (keys @node-maps))]
+      (do
+        (.setOnAction add
+          (proxy [EventHandler] []
+            (handle [_]
+              (open-twitter-signup!))))
+        (.setItems lv lbls)
+        (.setOnAction select
+          (proxy [EventHandler] []
+            (handle [_]
+              (select-acount! 
+                (keyword 
+                  (@node-maps 
+                    (.. lv getFocusModel getFocusedItem)))))))
+        (.setOnAction delete
+          (proxy [EventHandler] []
+            (handle [_]
+              (delete-acount! 
+                (keyword 
+                  (@node-maps 
+                    (.. lv getFocusModel getFocusedItem)))))))
+        (.setOnAction submit
+          (proxy [EventHandler] []
+            (handle [_]
+              (add-runlater
+                (let [name (add-new-acount! (pin-2-token (. pin getText)))
+                      lbl (gen-lbl name)]
+                  (do
+                    (.add lbls lbl)
+                    (dosync
+                      (alter node-maps merge
+                        {lbl name}))))))))))
+  ]]></fx:script>
+</BorderPane>
