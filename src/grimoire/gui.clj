@@ -1,3 +1,6 @@
+; for toolkit initializing
+(javafx.embed.swing.JFXPanel.)
+
 (ns grimoire.gui
   (:import (javafx.scene.input Clipboard ClipboardContent)
            (javafx.application Application Platform)

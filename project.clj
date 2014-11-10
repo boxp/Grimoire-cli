@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
-                  [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
+                 [org.clojure/core.async "0.1.242.0-44b1e3-alpha"]
                  [org.twitter4j/twitter4j-core"[3.0,)"]
                  [org.twitter4j/twitter4j-stream"[3.0,)"]
                  [org.twitter4j/twitter4j-async"[3.0,)"]
@@ -14,5 +14,6 @@
                  [gntp "0.6.0"]
                  [clojure-jsr223/clojure-jsr223 "1.0"]]
   :aot [grimoire.gui]
-  :resource-paths ["resources" "jfxrt.jar"]
+  :resource-paths ["resources"]
+  :main grimoire.core
   :java-source-paths ["src/java"])

@@ -1,0 +1,12 @@
+Includes
+
+- Grimoire.jar Grimoire本体
+- lib          Grimoireの依存ライブラリ
+
+Dependency
+
+jre 7(or later)
+
+How to
+
+Grimoire.jarをダブルクリックするか，java -jar Grimoire.jarして下さい．

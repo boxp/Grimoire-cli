@@ -4,13 +4,13 @@
         [grimoire.data]))
 
 (defn add-plugin!
-  "Pluginãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ç¶™æ‰¿ã—ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ãƒ—ãƒ©ã‚°ã‚¤ãƒ³ã«ç™»éŒ²ã—ã¾ã™"
+  "PluginƒvƒƒgƒRƒ‹‚ğŒp³‚µ‚½ƒIƒuƒWƒFƒNƒg‚ğƒvƒ‰ƒOƒCƒ“‚É“o˜^‚µ‚Ü‚·"
   [item]
   (dosync
     (alter plugins conj item)))
 
 (defn load-plugin
-  "pluginã‚’ãƒ­ãƒ¼ãƒ‰ã—ã¾ã™"
+  "plugin‚ğƒ[ƒh‚µ‚Ü‚·"
   []
   (let [loaded  (filter #(= (seq ".clj") (seq (take-last 4 %)))
                   (.list
