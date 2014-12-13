@@ -1,4 +1,12 @@
 (ns grimoire.gui
+  (:use [grimoire.data]
+        [grimoire.oauth]
+        [grimoire.services]
+        [grimoire.plugin]
+        [grimoire.commands]
+        [grimoire.wrapper]
+        [grimoire.listener]
+        [clojure.string :only [split]])
   (:import (javafx.scene.input Clipboard ClipboardContent)
            (javafx.application Application Platform)
            (javafx.scene Node Scene)
@@ -19,18 +27,9 @@
            (javafx.collections FXCollections ObservableList)
            (javafx.fxml FXML FXMLLoader)
            (twitter4j StatusUpdate))
-  (:use [grimoire.oauth]
-        [grimoire.services]
-        [grimoire.data]
-        [grimoire.plugin]
-        [grimoire.commands]
-        [grimoire.wrapper]
-        [grimoire.listener]
-        [clojure.string :only [split]])
-  (:require [clojure.java.io :as io])
-  (:gen-class
-   :extends javafx.application.Application))
+  (:require [clojure.java.io :as io]))
 
+ 
 (defn reply-form!
   "リプライフォームを開き，statusnumに返信します."
   [statusnum]
@@ -446,7 +445,7 @@
             (map add-new-acount!
               (vals cached-subtokens)))
 
-        mention-tweets (apply concat (map #(hash-map (key %) (reverse (. (val %) getMentions))) @twitters))]
+        mention-tweets (apply concat (map #(hash-map (key %) (reverse (. (val %) getMentionsTimeline))) @twitters))]
     (do
       ; backup scene
       (reset! mainscene scene)
@@ -493,27 +492,3 @@
           (map #(.on-start %)
             @plugins))
         (catch Exception e (print-node! (.getMessage e)))))))
-
-; javafx start
-; dirty
-(defn -start [this ^Stage stage]
-  (let [signup (-> "signin.fxml" io/resource FXMLLoader/load)]
-    (do
-      (get-oauthtoken!)
-      (reset! main-stage stage)
-      (if (get-tokens)
-        (do 
-          ; send stage to fxml
-          (get-tokens)
-          (gen-twitter)
-          ; set name
-          (reset! myname (. @twitter getScreenName))
-          (gen-twitterstream listener)
-          (start)
-          (mainwin stage))
-        ; start sign up scene 
-        (doto stage
-          (.setTitle "Twitter Sign up")
-          (.. getIcons (add (Image. "bird_blue_32.png" (double 32) (double 32) true true)))
-          (.setScene (Scene. signup 600 400))
-          .show)))))

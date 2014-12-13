@@ -15,9 +15,9 @@
           (.setOAuthAccessToken (:token @tokens))
           (.setOAuthAccessTokenSecret (:tokenSecret @tokens)))
         conf (.build confbuilder)
-        tsi (doto (.getInstance (TwitterStreamFactory. conf))
-              (.addListener ^twitter4j.UserStreamListener (listener @twitter nodes mention-nodes)))]
+        tsi (.getInstance (TwitterStreamFactory. conf))]
     (reset! twitterstream tsi)
+    (.addListener @twitterstream (listener @twitter nodes mention-nodes))
     ; Observablelistのマップを追加
     (dosync
       (alter nodes-maps merge

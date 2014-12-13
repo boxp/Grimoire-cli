@@ -2,6 +2,8 @@
   (:import (javafx.collections FXCollections ObservableList)
            (javafx.scene Node)))
 
+(javafx.embed.swing.JFXPanel.)
+
 ; twitter
 (def tokens 
   (atom nil))

@@ -1,7 +1,7 @@
 # Grimoire-Cli PKGBUILD 2013/11/11 Written by BOXP
 #!/bin/sh
 pkgname="grimoire"
-pkgver=20131127
+pkgver=20141214
 pkgrel=1
 pkgdesc="A Clojure-based S-expression twitter client on JavaFx"
 arch=('any')
