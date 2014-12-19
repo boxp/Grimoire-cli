@@ -14,6 +14,8 @@
                  [gntp "0.6.0"]
                  [clojure-jsr223/clojure-jsr223 "1.0"]]
   :resource-paths ["resources"]
-  :main grimoire.core
   :aot [grimoire.core]
+  :main grimoire.core.App
+  :uberjar {:aot :all
+            :auto-clean false}
   :java-source-paths ["src/java"])

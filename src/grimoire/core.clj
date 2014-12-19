@@ -11,12 +11,11 @@
             [grimoire.listener :refer [listener]]
             [grimoire.gui :refer [mainwin]]
             [grimoire.data :refer :all]
-            [clojure.java.io :as io]))
-
-(gen-class
-  :name "App"
-  :main true
-  :extends javafx.application.Application)
+            [clojure.java.io :as io])
+  (:gen-class
+   :name "grimoire.core.App"
+   :main true
+   :extends javafx.application.Application))
 
 ; javafx start
 ; dirty
@@ -44,4 +43,4 @@
 
 (defn -main 
   [& args]
-  (Application/launch (Class/forName "App") (into-array String [])))
+  (Application/launch (Class/forName "grimoire.core.App") (into-array String [])))
